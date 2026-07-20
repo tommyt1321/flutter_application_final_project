@@ -1,0 +1,188 @@
+import 'package:hive_ce/hive_ce.dart';
+
+import '../models/food_category.dart';
+
+class CategoryRepository {
+  CategoryRepository(this._box);
+
+  final Box<FoodCategory> _box;
+
+  List<FoodCategory> getAllCategories() {
+    final categories = _box.values.toList();
+
+    categories.sort((first, second) {
+      if (first.isDefault != second.isDefault) {
+        return first.isDefault ? -1 : 1;
+      }
+
+      return first.name.toLowerCase().compareTo(second.name.toLowerCase());
+    });
+
+    return List<FoodCategory>.unmodifiable(categories);
+  }
+
+  FoodCategory? getCategoryById(String id) {
+    return _box.get(id);
+  }
+
+  Future<void> seedDefaultCategories() async {
+    final now = DateTime.now();
+
+    final defaultCategories = [
+      FoodCategory(
+        id: 'category_fruits',
+        name: 'Fruits',
+        iconKey: 'fruit',
+        isDefault: true,
+        createdAt: now,
+      ),
+      FoodCategory(
+        id: 'category_vegetables',
+        name: 'Vegetables',
+        iconKey: 'vegetable',
+        isDefault: true,
+        createdAt: now,
+      ),
+      FoodCategory(
+        id: 'category_meat',
+        name: 'Meat',
+        iconKey: 'meat',
+        isDefault: true,
+        createdAt: now,
+      ),
+      FoodCategory(
+        id: 'category_seafood',
+        name: 'Seafood',
+        iconKey: 'seafood',
+        isDefault: true,
+        createdAt: now,
+      ),
+      FoodCategory(
+        id: 'category_dairy',
+        name: 'Dairy',
+        iconKey: 'dairy',
+        isDefault: true,
+        createdAt: now,
+      ),
+      FoodCategory(
+        id: 'category_beverages',
+        name: 'Beverages',
+        iconKey: 'drink',
+        isDefault: true,
+        createdAt: now,
+      ),
+      FoodCategory(
+        id: 'category_snacks',
+        name: 'Snacks',
+        iconKey: 'snack',
+        isDefault: true,
+        createdAt: now,
+      ),
+      FoodCategory(
+        id: 'category_frozen',
+        name: 'Frozen Food',
+        iconKey: 'frozen',
+        isDefault: true,
+        createdAt: now,
+      ),
+      FoodCategory(
+        id: 'category_canned',
+        name: 'Canned Food',
+        iconKey: 'canned',
+        isDefault: true,
+        createdAt: now,
+      ),
+      FoodCategory(
+        id: 'category_dry',
+        name: 'Dry Food',
+        iconKey: 'dry',
+        isDefault: true,
+        createdAt: now,
+      ),
+      FoodCategory(
+        id: 'category_condiments',
+        name: 'Condiments',
+        iconKey: 'condiment',
+        isDefault: true,
+        createdAt: now,
+      ),
+      FoodCategory(
+        id: 'category_other',
+        name: 'Other',
+        iconKey: 'other',
+        isDefault: true,
+        createdAt: now,
+      ),
+    ];
+
+    for (final category in defaultCategories) {
+      if (!_box.containsKey(category.id)) {
+        await _box.put(category.id, category);
+      }
+    }
+  }
+
+  Future<void> addCategory(FoodCategory category) async {
+    final trimmedName = category.name.trim();
+
+    if (trimmedName.isEmpty) {
+      throw ArgumentError('Category name cannot be empty.');
+    }
+
+    if (_categoryNameExists(trimmedName)) {
+      throw StateError('A category with this name already exists.');
+    }
+
+    await _box.put(category.id, category.copyWith(name: trimmedName));
+  }
+
+  Future<void> updateCategory(FoodCategory category) async {
+    final existingCategory = _box.get(category.id);
+
+    if (existingCategory == null) {
+      throw StateError('The selected category does not exist.');
+    }
+
+    if (existingCategory.isDefault) {
+      throw StateError('Default categories cannot be edited.');
+    }
+
+    final trimmedName = category.name.trim();
+
+    if (trimmedName.isEmpty) {
+      throw ArgumentError('Category name cannot be empty.');
+    }
+
+    if (_categoryNameExists(trimmedName, excludingId: category.id)) {
+      throw StateError('A category with this name already exists.');
+    }
+
+    await _box.put(
+      category.id,
+      category.copyWith(name: trimmedName, isDefault: false),
+    );
+  }
+
+  Future<void> deleteCategory(String categoryId) async {
+    final category = _box.get(categoryId);
+
+    if (category == null) {
+      throw StateError('The selected category does not exist.');
+    }
+
+    if (category.isDefault) {
+      throw StateError('Default categories cannot be deleted.');
+    }
+
+    await _box.delete(categoryId);
+  }
+
+  bool _categoryNameExists(String name, {String? excludingId}) {
+    final normalizedName = name.trim().toLowerCase();
+
+    return _box.values.any((category) {
+      return category.id != excludingId &&
+          category.name.trim().toLowerCase() == normalizedName;
+    });
+  }
+}
