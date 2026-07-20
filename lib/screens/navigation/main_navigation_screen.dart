@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../dashboard/dashboard_screen.dart';
+import '../profile/profile_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -29,11 +30,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       title: 'Shopping',
       message: 'The shopping-list module will appear here.',
     ),
-    _TemporaryModuleScreen(
-      icon: Icons.person_outline,
-      title: 'Profile',
-      message: 'Your profile and settings will appear here.',
-    ),
+    ProfileScreen(),
   ];
 
   void _changeScreen(int index) {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../screens/categories/manage_categories_screen.dart';
 import '../../screens/navigation/main_navigation_screen.dart';
 import '../../screens/splash/splash_screen.dart';
 import 'app_routes.dart';
@@ -18,6 +19,12 @@ class RouteGenerator {
       case AppRoutes.mainNavigation:
         return MaterialPageRoute<void>(
           builder: (_) => const MainNavigationScreen(),
+          settings: settings,
+        );
+
+      case AppRoutes.manageCategories:
+        return MaterialPageRoute<void>(
+          builder: (_) => const ManageCategoriesScreen(),
           settings: settings,
         );
 
