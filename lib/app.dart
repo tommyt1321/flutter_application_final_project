@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
 import 'core/constants/app_strings.dart';
+import 'core/routes/app_routes.dart';
+import 'core/routes/route_generator.dart';
 import 'core/theme/app_theme.dart';
-import 'screens/splash/splash_screen.dart';
 
 class PantryPalApp extends StatelessWidget {
   const PantryPalApp({super.key});
@@ -15,7 +16,8 @@ class PantryPalApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.light,
-      home: const SplashScreen(),
+      initialRoute: AppRoutes.splash,
+      onGenerateRoute: RouteGenerator.generateRoute,
     );
   }
 }

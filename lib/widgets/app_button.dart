@@ -26,16 +26,19 @@ class AppButton extends StatelessWidget {
             height: 22,
             child: CircularProgressIndicator(strokeWidth: 2.5),
           )
-        : Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (icon != null) ...[
-                Icon(icon, size: 20),
-                const SizedBox(width: 8),
+        : FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (icon != null) ...[
+                  Icon(icon, size: 20),
+                  const SizedBox(width: 8),
+                ],
+                Text(text, maxLines: 1),
               ],
-              Text(text),
-            ],
+            ),
           );
 
     return SizedBox(
