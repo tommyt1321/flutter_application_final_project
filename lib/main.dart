@@ -1,3 +1,5 @@
+import 'package:device_preview/device_preview.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
@@ -7,6 +9,8 @@ import 'core/constants/hive_boxes.dart';
 import 'models/food_category.dart';
 import 'providers/category_provider.dart';
 import 'repositories/category_repository.dart';
+
+const bool showDevicePreview = true;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,16 +27,23 @@ Future<void> main() async {
 
   final categoryRepository = CategoryRepository(categoryBox);
 
+  final isDevicePreviewEnabled = !kReleaseMode && showDevicePreview;
+
   runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider<CategoryProvider>(
-          create: (_) {
-            return CategoryProvider(categoryRepository)..initialize();
-          },
-        ),
-      ],
-      child: const PantryPalApp(),
+    DevicePreview(
+      enabled: isDevicePreviewEnabled,
+      builder: (context) {
+        return MultiProvider(
+          providers: [
+            ChangeNotifierProvider<CategoryProvider>(
+              create: (_) {
+                return CategoryProvider(categoryRepository)..initialize();
+              },
+            ),
+          ],
+          child: PantryPalApp(enableDevicePreview: isDevicePreviewEnabled),
+        );
+      },
     ),
   );
 }
