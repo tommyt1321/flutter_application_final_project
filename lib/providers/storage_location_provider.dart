@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../models/storage_location.dart';
@@ -8,6 +10,7 @@ class StorageLocationProvider extends ChangeNotifier {
 
   final StorageLocationRepository _repository;
 
+  String? _userId;
   List<StorageLocation> _locations = [];
   bool _isLoading = false;
   bool _isSubmitting = false;
@@ -26,26 +29,75 @@ class StorageLocationProvider extends ChangeNotifier {
 
   int get locationCount => _locations.length;
 
+  void updateUserId(String? userId) {
+    if (_userId == userId) {
+      return;
+    }
+
+    _userId = userId;
+
+    if (userId == null) {
+      _locations = [];
+      _isLoading = false;
+      _isSubmitting = false;
+      _errorMessage = null;
+
+      scheduleMicrotask(notifyListeners);
+      return;
+    }
+
+    scheduleMicrotask(() {
+      unawaited(initialize());
+    });
+  }
+
   Future<void> initialize() async {
+    final userId = _userId;
+
+    if (userId == null) {
+      _locations = [];
+      _isLoading = false;
+      _errorMessage = 'Please sign in to view storage locations.';
+      notifyListeners();
+      return;
+    }
+
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
       await _repository.seedDefaultLocations();
-      _loadLocations();
+
+      await _repository.migrateLegacyCustomLocations(userId);
+
+      if (_userId != userId) {
+        return;
+      }
+
+      _loadLocations(userId);
     } catch (error) {
-      _errorMessage = _getReadableError(error);
+      if (_userId == userId) {
+        _errorMessage = _getReadableError(error);
+      }
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      if (_userId == userId) {
+        _isLoading = false;
+        notifyListeners();
+      }
     }
   }
 
   void reloadLocations() {
+    final userId = _userId;
+
+    if (userId == null) {
+      return;
+    }
+
     try {
       _errorMessage = null;
-      _loadLocations();
+      _loadLocations(userId);
       notifyListeners();
     } catch (error) {
       _errorMessage = _getReadableError(error);
@@ -54,32 +106,50 @@ class StorageLocationProvider extends ChangeNotifier {
   }
 
   StorageLocation? getLocationById(String id) {
-    return _repository.getLocationById(id);
+    final userId = _userId;
+
+    if (userId == null) {
+      return null;
+    }
+
+    return _repository.getLocationById(id: id, userId: userId);
   }
 
   Future<bool> addLocation({
     required String name,
     required String iconKey,
   }) async {
+    final userId = _userId;
+
+    if (userId == null) {
+      _errorMessage = 'Please sign in before adding a storage location.';
+      notifyListeners();
+      return false;
+    }
+
     _startSubmitting();
 
     try {
       final location = StorageLocation(
-        id: 'custom_location_${DateTime.now().microsecondsSinceEpoch}',
+        id:
+            'custom_location_'
+            '${DateTime.now().microsecondsSinceEpoch}',
         name: name,
         iconKey: iconKey,
         isDefault: false,
         createdAt: DateTime.now(),
+        ownerUserId: userId,
       );
 
-      await _repository.addLocation(location);
+      await _repository.addLocation(location, userId: userId);
 
-      _loadLocations();
+      if (_userId == userId) {
+        _loadLocations(userId);
+      }
 
       return true;
     } catch (error) {
       _errorMessage = _getReadableError(error);
-
       return false;
     } finally {
       _finishSubmitting();
@@ -91,19 +161,28 @@ class StorageLocationProvider extends ChangeNotifier {
     required String name,
     required String iconKey,
   }) async {
+    final userId = _userId;
+
+    if (userId == null) {
+      _errorMessage = 'Please sign in before editing a storage location.';
+      notifyListeners();
+      return false;
+    }
+
     _startSubmitting();
 
     try {
       final updatedLocation = location.copyWith(name: name, iconKey: iconKey);
 
-      await _repository.updateLocation(updatedLocation);
+      await _repository.updateLocation(updatedLocation, userId: userId);
 
-      _loadLocations();
+      if (_userId == userId) {
+        _loadLocations(userId);
+      }
 
       return true;
     } catch (error) {
       _errorMessage = _getReadableError(error);
-
       return false;
     } finally {
       _finishSubmitting();
@@ -111,17 +190,26 @@ class StorageLocationProvider extends ChangeNotifier {
   }
 
   Future<bool> deleteLocation(String locationId) async {
+    final userId = _userId;
+
+    if (userId == null) {
+      _errorMessage = 'Please sign in before deleting a storage location.';
+      notifyListeners();
+      return false;
+    }
+
     _startSubmitting();
 
     try {
-      await _repository.deleteLocation(locationId);
+      await _repository.deleteLocation(locationId, userId: userId);
 
-      _loadLocations();
+      if (_userId == userId) {
+        _loadLocations(userId);
+      }
 
       return true;
     } catch (error) {
       _errorMessage = _getReadableError(error);
-
       return false;
     } finally {
       _finishSubmitting();
@@ -137,8 +225,8 @@ class StorageLocationProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _loadLocations() {
-    _locations = _repository.getAllLocations();
+  void _loadLocations(String userId) {
+    _locations = _repository.getLocationsForUser(userId);
   }
 
   void _startSubmitting() {

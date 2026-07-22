@@ -10,6 +10,7 @@ class StorageLocation {
     required this.iconKey,
     required this.isDefault,
     required this.createdAt,
+    this.ownerUserId,
   });
 
   @HiveField(0)
@@ -27,12 +28,18 @@ class StorageLocation {
   @HiveField(4)
   final DateTime createdAt;
 
+  // Null for shared default locations.
+  // Firebase UID for custom locations.
+  @HiveField(5)
+  final String? ownerUserId;
+
   StorageLocation copyWith({
     String? id,
     String? name,
     String? iconKey,
     bool? isDefault,
     DateTime? createdAt,
+    String? ownerUserId,
   }) {
     return StorageLocation(
       id: id ?? this.id,
@@ -40,6 +47,7 @@ class StorageLocation {
       iconKey: iconKey ?? this.iconKey,
       isDefault: isDefault ?? this.isDefault,
       createdAt: createdAt ?? this.createdAt,
+      ownerUserId: ownerUserId ?? this.ownerUserId,
     );
   }
 }

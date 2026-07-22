@@ -97,10 +97,18 @@ Future<void> main() async {
                 return provider;
               },
             ),
-            ChangeNotifierProvider<StorageLocationProvider>(
+            ChangeNotifierProxyProvider<AuthProvider, StorageLocationProvider>(
               create: (_) {
-                return StorageLocationProvider(storageLocationRepository)
-                  ..initialize();
+                return StorageLocationProvider(storageLocationRepository);
+              },
+              update: (_, authProvider, storageLocationProvider) {
+                final provider =
+                    storageLocationProvider ??
+                    StorageLocationProvider(storageLocationRepository);
+
+                provider.updateUserId(authProvider.userId);
+
+                return provider;
               },
             ),
             ChangeNotifierProvider<SettingsProvider>.value(
