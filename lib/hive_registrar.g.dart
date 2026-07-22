@@ -3,11 +3,13 @@
 // Check in to version control
 
 import 'package:hive_ce/hive_ce.dart';
+import 'package:flutter_application_final_project/models/app_settings.dart';
 import 'package:flutter_application_final_project/models/food_category.dart';
 import 'package:flutter_application_final_project/models/storage_location.dart';
 
 extension HiveRegistrar on HiveInterface {
   void registerAdapters() {
+    registerAdapter(AppSettingsAdapter());
     registerAdapter(FoodCategoryAdapter());
     registerAdapter(StorageLocationAdapter());
   }
@@ -15,6 +17,7 @@ extension HiveRegistrar on HiveInterface {
 
 extension IsolatedHiveRegistrar on IsolatedHiveInterface {
   void registerAdapters() {
+    registerAdapter(AppSettingsAdapter());
     registerAdapter(FoodCategoryAdapter());
     registerAdapter(StorageLocationAdapter());
   }

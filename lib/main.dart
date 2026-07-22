@@ -6,11 +6,14 @@ import 'package:provider/provider.dart';
 
 import 'app.dart';
 import 'core/constants/hive_boxes.dart';
+import 'models/app_settings.dart';
 import 'models/food_category.dart';
 import 'models/storage_location.dart';
 import 'providers/category_provider.dart';
+import 'providers/settings_provider.dart';
 import 'providers/storage_location_provider.dart';
 import 'repositories/category_repository.dart';
+import 'repositories/settings_repository.dart';
 import 'repositories/storage_location_repository.dart';
 
 const bool showDevicePreview = true;
@@ -28,6 +31,10 @@ Future<void> main() async {
     Hive.registerAdapter(StorageLocationAdapter());
   }
 
+  if (!Hive.isAdapterRegistered(2)) {
+    Hive.registerAdapter(AppSettingsAdapter());
+  }
+
   final categoryBox = await Hive.openBox<FoodCategory>(
     HiveBoxes.foodCategories,
   );
@@ -36,11 +43,19 @@ Future<void> main() async {
     HiveBoxes.storageLocations,
   );
 
+  final settingsBox = await Hive.openBox<AppSettings>(HiveBoxes.appSettings);
+
   final categoryRepository = CategoryRepository(categoryBox);
 
   final storageLocationRepository = StorageLocationRepository(
     storageLocationBox,
   );
+
+  final settingsRepository = SettingsRepository(settingsBox);
+
+  final settingsProvider = SettingsProvider(settingsRepository);
+
+  await settingsProvider.initialize();
 
   final isDevicePreviewEnabled = !kReleaseMode && showDevicePreview;
 
@@ -60,6 +75,9 @@ Future<void> main() async {
                 return StorageLocationProvider(storageLocationRepository)
                   ..initialize();
               },
+            ),
+            ChangeNotifierProvider<SettingsProvider>.value(
+              value: settingsProvider,
             ),
           ],
           child: PantryPalApp(enableDevicePreview: isDevicePreviewEnabled),

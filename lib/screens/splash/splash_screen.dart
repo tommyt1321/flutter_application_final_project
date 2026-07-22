@@ -42,13 +42,13 @@ class _SplashScreenState extends State<SplashScreen> {
                   width: 104,
                   height: 104,
                   decoration: BoxDecoration(
-                    color: AppColors.primaryLight,
+                    color: Theme.of(context).colorScheme.primaryContainer,
                     borderRadius: BorderRadius.circular(28),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.kitchen_rounded,
                     size: 58,
-                    color: AppColors.primary,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -63,7 +63,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   AppStrings.appTagline,
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: AppColors.lightTextSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
                 const SizedBox(height: 40),

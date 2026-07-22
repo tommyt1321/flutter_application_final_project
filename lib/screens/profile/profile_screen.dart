@@ -49,18 +49,20 @@ class ProfileScreen extends StatelessWidget {
           const SizedBox(height: 24),
           Text('Application', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 10),
-          const Card(
+          Card(
             child: Column(
               children: [
                 ListTile(
-                  leading: Icon(Icons.dark_mode_outlined),
-                  title: Text('Appearance'),
-                  subtitle: Text('Light and dark theme settings'),
-                  trailing: Icon(Icons.chevron_right),
-                  enabled: false,
+                  leading: const Icon(Icons.dark_mode_outlined),
+                  title: const Text('Appearance'),
+                  subtitle: const Text('Light, dark or system theme'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    Navigator.of(context).pushNamed(AppRoutes.appearance);
+                  },
                 ),
-                Divider(height: 1),
-                ListTile(
+                const Divider(height: 1),
+                const ListTile(
                   leading: Icon(Icons.info_outline),
                   title: Text('About PantryPal'),
                   subtitle: Text('Version 1.6.7'),

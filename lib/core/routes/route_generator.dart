@@ -3,6 +3,7 @@ import '../../screens/storage/manage_storage_locations_screen.dart';
 import '../../screens/categories/manage_categories_screen.dart';
 import '../../screens/navigation/main_navigation_screen.dart';
 import '../../screens/splash/splash_screen.dart';
+import '../../screens/profile/appearance_screen.dart';
 import 'app_routes.dart';
 
 class RouteGenerator {
@@ -31,6 +32,12 @@ class RouteGenerator {
       case AppRoutes.manageStorageLocations:
         return MaterialPageRoute<void>(
           builder: (_) => const ManageStorageLocationsScreen(),
+          settings: settings,
+        );
+
+      case AppRoutes.appearance:
+        return MaterialPageRoute<void>(
+          builder: (_) => const AppearanceScreen(),
           settings: settings,
         );
 
