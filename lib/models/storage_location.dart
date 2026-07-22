@@ -1,9 +1,10 @@
 import 'package:hive_ce_flutter/hive_flutter.dart';
-part 'food_category.g.dart';
 
-@HiveType(typeId: 0)
-class FoodCategory {
-  const FoodCategory({
+part 'storage_location.g.dart';
+
+@HiveType(typeId: 1)
+class StorageLocation {
+  const StorageLocation({
     required this.id,
     required this.name,
     required this.iconKey,
@@ -26,14 +27,14 @@ class FoodCategory {
   @HiveField(4)
   final DateTime createdAt;
 
-  FoodCategory copyWith({
+  StorageLocation copyWith({
     String? id,
     String? name,
     String? iconKey,
     bool? isDefault,
     DateTime? createdAt,
   }) {
-    return FoodCategory(
+    return StorageLocation(
       id: id ?? this.id,
       name: name ?? this.name,
       iconKey: iconKey ?? this.iconKey,
