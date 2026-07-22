@@ -32,12 +32,16 @@ class ProfileScreen extends StatelessWidget {
                   },
                 ),
                 const Divider(height: 1),
-                const ListTile(
-                  leading: Icon(Icons.kitchen_outlined),
-                  title: Text('Storage Locations'),
-                  subtitle: Text('Coming in the next development step'),
-                  trailing: Icon(Icons.chevron_right),
-                  enabled: false,
+                ListTile(
+                  leading: const Icon(Icons.kitchen_outlined),
+                  title: const Text('Storage Locations'),
+                  subtitle: const Text('Manage where your food is stored'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    Navigator.of(
+                      context,
+                    ).pushNamed(AppRoutes.manageStorageLocations);
+                  },
                 ),
               ],
             ),

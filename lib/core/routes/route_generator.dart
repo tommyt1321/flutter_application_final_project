@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import '../../screens/storage/manage_storage_locations_screen.dart';
 import '../../screens/categories/manage_categories_screen.dart';
 import '../../screens/navigation/main_navigation_screen.dart';
 import '../../screens/splash/splash_screen.dart';
@@ -25,6 +25,12 @@ class RouteGenerator {
       case AppRoutes.manageCategories:
         return MaterialPageRoute<void>(
           builder: (_) => const ManageCategoriesScreen(),
+          settings: settings,
+        );
+
+      case AppRoutes.manageStorageLocations:
+        return MaterialPageRoute<void>(
+          builder: (_) => const ManageStorageLocationsScreen(),
           settings: settings,
         );
 
