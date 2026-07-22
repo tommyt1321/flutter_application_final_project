@@ -11,10 +11,13 @@ import 'firebase_options.dart';
 import 'models/app_settings.dart';
 import 'models/food_category.dart';
 import 'models/storage_location.dart';
+import 'models/food_item.dart';
+import 'providers/food_item_provider.dart';
 import 'providers/category_provider.dart';
 import 'providers/settings_provider.dart';
 import 'providers/storage_location_provider.dart';
 import 'providers/auth_provider.dart';
+import 'repositories/food_item_repository.dart';
 import 'repositories/auth_repository.dart';
 import 'repositories/category_repository.dart';
 import 'repositories/settings_repository.dart';
@@ -64,6 +67,10 @@ Future<void> main() async {
     storageLocationBox,
   );
 
+  final foodItemBox = await Hive.openBox<FoodItem>('food_items');
+
+  final foodItemRepository = FoodItemRepository(foodItemBox);
+
   final settingsRepository = SettingsRepository(settingsBox);
 
   // Initialize settings before showing the application.
@@ -105,6 +112,19 @@ Future<void> main() async {
                 final provider =
                     storageLocationProvider ??
                     StorageLocationProvider(storageLocationRepository);
+
+                provider.updateUserId(authProvider.userId);
+
+                return provider;
+              },
+            ),
+            ChangeNotifierProxyProvider<AuthProvider, FoodItemProvider>(
+              create: (_) {
+                return FoodItemProvider(foodItemRepository);
+              },
+              update: (_, authProvider, foodItemProvider) {
+                final provider =
+                    foodItemProvider ?? FoodItemProvider(foodItemRepository);
 
                 provider.updateUserId(authProvider.userId);
 
