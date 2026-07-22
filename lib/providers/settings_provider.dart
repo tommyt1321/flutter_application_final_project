@@ -48,6 +48,39 @@ class SettingsProvider extends ChangeNotifier {
     }
   }
 
+  String get displayName {
+    final savedName = _settings.displayName?.trim();
+
+    if (savedName == null || savedName.isEmpty) {
+      return 'PantryPal User';
+    }
+
+    return savedName;
+  }
+
+  Future<bool> setDisplayName(String displayName) async {
+    _isSaving = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      _settings = await _repository.updateDisplayName(displayName);
+
+      return true;
+    } catch (error) {
+      if (error is ArgumentError) {
+        _errorMessage = error.message?.toString();
+      } else {
+        _errorMessage = 'Unable to update the profile name.';
+      }
+
+      return false;
+    } finally {
+      _isSaving = false;
+      notifyListeners();
+    }
+  }
+
   Future<void> initialize() async {
     _isLoading = true;
     _errorMessage = null;

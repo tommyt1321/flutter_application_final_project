@@ -18,15 +18,18 @@ class AppSettingsAdapter extends TypeAdapter<AppSettings> {
     };
     return AppSettings(
       themeModeKey: fields[0] == null ? 'system' : fields[0] as String,
+      displayName: fields[1] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, AppSettings obj) {
     writer
-      ..writeByte(1)
+      ..writeByte(2)
       ..writeByte(0)
-      ..write(obj.themeModeKey);
+      ..write(obj.themeModeKey)
+      ..writeByte(1)
+      ..write(obj.displayName);
   }
 
   @override

@@ -40,4 +40,24 @@ class SettingsRepository {
 
     return updatedSettings;
   }
+
+  Future<AppSettings> updateDisplayName(String displayName) async {
+    final trimmedName = displayName.trim();
+
+    if (trimmedName.length < 2) {
+      throw ArgumentError(
+        'The profile name must contain at least 2 characters.',
+      );
+    }
+
+    if (trimmedName.length > 30) {
+      throw ArgumentError('The profile name cannot exceed 30 characters.');
+    }
+
+    final updatedSettings = getSettings().copyWith(displayName: trimmedName);
+
+    await _box.put(_settingsKey, updatedSettings);
+
+    return updatedSettings;
+  }
 }

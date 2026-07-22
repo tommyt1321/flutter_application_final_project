@@ -4,12 +4,18 @@ part 'app_settings.g.dart';
 
 @HiveType(typeId: 2)
 class AppSettings {
-  const AppSettings({this.themeModeKey = 'system'});
+  const AppSettings({this.themeModeKey = 'system', this.displayName});
 
   @HiveField(0)
   final String themeModeKey;
 
-  AppSettings copyWith({String? themeModeKey}) {
-    return AppSettings(themeModeKey: themeModeKey ?? this.themeModeKey);
+  @HiveField(1)
+  final String? displayName;
+
+  AppSettings copyWith({String? themeModeKey, String? displayName}) {
+    return AppSettings(
+      themeModeKey: themeModeKey ?? this.themeModeKey,
+      displayName: displayName ?? this.displayName,
+    );
   }
 }
