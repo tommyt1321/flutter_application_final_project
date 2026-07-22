@@ -1,17 +1,21 @@
 import 'package:device_preview/device_preview.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
-
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'app.dart';
 import 'core/constants/hive_boxes.dart';
+import 'firebase_options.dart';
 import 'models/app_settings.dart';
 import 'models/food_category.dart';
 import 'models/storage_location.dart';
 import 'providers/category_provider.dart';
 import 'providers/settings_provider.dart';
 import 'providers/storage_location_provider.dart';
+import 'providers/auth_provider.dart';
+import 'repositories/auth_repository.dart';
 import 'repositories/category_repository.dart';
 import 'repositories/settings_repository.dart';
 import 'repositories/storage_location_repository.dart';
@@ -21,8 +25,13 @@ const bool showDevicePreview = true;
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Initialize Firebase before using Firebase Authentication.
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Initialize the local Hive database.
   await Hive.initFlutter();
 
+  // Register Hive adapters.
   if (!Hive.isAdapterRegistered(0)) {
     Hive.registerAdapter(FoodCategoryAdapter());
   }
@@ -35,6 +44,9 @@ Future<void> main() async {
     Hive.registerAdapter(AppSettingsAdapter());
   }
 
+  final authRepository = AuthRepository(firebase_auth.FirebaseAuth.instance);
+
+  // Open Hive boxes.
   final categoryBox = await Hive.openBox<FoodCategory>(
     HiveBoxes.foodCategories,
   );
@@ -45,6 +57,7 @@ Future<void> main() async {
 
   final settingsBox = await Hive.openBox<AppSettings>(HiveBoxes.appSettings);
 
+  // Create repositories.
   final categoryRepository = CategoryRepository(categoryBox);
 
   final storageLocationRepository = StorageLocationRepository(
@@ -53,6 +66,7 @@ Future<void> main() async {
 
   final settingsRepository = SettingsRepository(settingsBox);
 
+  // Initialize settings before showing the application.
   final settingsProvider = SettingsProvider(settingsRepository);
 
   await settingsProvider.initialize();
@@ -65,6 +79,11 @@ Future<void> main() async {
       builder: (context) {
         return MultiProvider(
           providers: [
+            ChangeNotifierProvider<AuthProvider>(
+              create: (_) {
+                return AuthProvider(authRepository);
+              },
+            ),
             ChangeNotifierProvider<CategoryProvider>(
               create: (_) {
                 return CategoryProvider(categoryRepository)..initialize();
