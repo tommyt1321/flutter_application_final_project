@@ -25,7 +25,7 @@ class _SplashScreenState extends State<SplashScreen> {
       return;
     }
 
-    Navigator.of(context).pushReplacementNamed(AppRoutes.mainNavigation);
+    Navigator.of(context).pushReplacementNamed(AppRoutes.authGate);
   }
 
   @override

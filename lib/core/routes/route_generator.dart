@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../screens/auth/auth_gate.dart';
+import '../../screens/auth/registry_screen.dart';
 import '../../screens/storage/manage_storage_locations_screen.dart';
 import '../../screens/categories/manage_categories_screen.dart';
 import '../../screens/navigation/main_navigation_screen.dart';
@@ -11,6 +13,17 @@ class RouteGenerator {
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
+      case AppRoutes.authGate:
+        return MaterialPageRoute<void>(
+          builder: (_) => const AuthGate(),
+          settings: settings,
+        );
+
+      case AppRoutes.register:
+        return MaterialPageRoute<void>(
+          builder: (_) => const RegisterScreen(),
+          settings: settings,
+        );
       case AppRoutes.splash:
         return MaterialPageRoute<void>(
           builder: (_) => const SplashScreen(),

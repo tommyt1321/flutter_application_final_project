@@ -91,23 +91,4 @@ void main() {
       throwsA(isA<ArgumentError>()),
     );
   });
-
-  test('updates and stores the profile display name', () async {
-    await repository.initialize();
-
-    final updatedSettings = await repository.updateDisplayName('Tommy');
-
-    expect(updatedSettings.displayName, 'Tommy');
-
-    expect(repository.getSettings().displayName, 'Tommy');
-  });
-
-  test('rejects an invalid profile display name', () async {
-    await repository.initialize();
-
-    await expectLater(
-      repository.updateDisplayName('A'),
-      throwsA(isA<ArgumentError>()),
-    );
-  });
 }

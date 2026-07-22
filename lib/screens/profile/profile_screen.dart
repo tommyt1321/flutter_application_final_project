@@ -2,13 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/routes/app_routes.dart';
-import '../../providers/settings_provider.dart';
+import '../../providers/auth_provider.dart';
+import '../../widgets/confirmation_dialog.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
   Future<void> _editDisplayName(BuildContext context) async {
-    final provider = context.read<SettingsProvider>();
+    final provider = context.read<AuthProvider?>();
+
+    // Allows widget tests to run when AuthProvider is not supplied.
+    if (provider == null) {
+      return;
+    }
 
     final newName = await showDialog<String>(
       context: context,
@@ -21,7 +27,7 @@ class ProfileScreen extends StatelessWidget {
       return;
     }
 
-    final success = await provider.setDisplayName(newName);
+    final success = await provider.updateDisplayName(newName);
 
     if (!context.mounted) {
       return;
@@ -36,11 +42,47 @@ class ProfileScreen extends StatelessWidget {
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
+  Future<void> _signOut(BuildContext context) async {
+    final shouldSignOut = await showConfirmationDialog(
+      context: context,
+      title: 'Sign out?',
+      message:
+          'You will need to enter your email and password to access PantryPal again.',
+      confirmText: 'Sign Out',
+    );
+
+    if (!context.mounted || !shouldSignOut) {
+      return;
+    }
+
+    final provider = context.read<AuthProvider?>();
+
+    if (provider == null) {
+      return;
+    }
+
+    final success = await provider.signOut();
+
+    if (!context.mounted || success) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          provider.errorMessage ?? 'Unable to sign out. Please try again.',
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final displayName = context.select<SettingsProvider, String>(
-      (provider) => provider.displayName,
-    );
+    final authProvider = context.watch<AuthProvider?>();
+
+    final displayName = authProvider?.displayName ?? 'PantryPal User';
+
+    final email = authProvider?.email ?? '';
 
     return Scaffold(
       appBar: AppBar(title: const Text('Profile & Settings')),
@@ -49,9 +91,12 @@ class ProfileScreen extends StatelessWidget {
         children: [
           _ProfileHeader(
             displayName: displayName,
-            onEdit: () {
-              _editDisplayName(context);
-            },
+            email: email,
+            onEdit: authProvider == null
+                ? null
+                : () {
+                    _editDisplayName(context);
+                  },
           ),
           const SizedBox(height: 24),
           Text(
@@ -107,6 +152,25 @@ class ProfileScreen extends StatelessWidget {
                   title: Text('About PantryPal'),
                   subtitle: Text('Version 1.6.7'),
                 ),
+                if (authProvider?.isAuthenticated == true) ...[
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: Icon(
+                      Icons.logout,
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                    title: Text(
+                      'Sign Out',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                    subtitle: const Text('Sign out of your PantryPal account'),
+                    onTap: () {
+                      _signOut(context);
+                    },
+                  ),
+                ],
               ],
             ),
           ),
@@ -117,10 +181,15 @@ class ProfileScreen extends StatelessWidget {
 }
 
 class _ProfileHeader extends StatelessWidget {
-  const _ProfileHeader({required this.displayName, required this.onEdit});
+  const _ProfileHeader({
+    required this.displayName,
+    required this.email,
+    required this.onEdit,
+  });
 
   final String displayName;
-  final VoidCallback onEdit;
+  final String email;
+  final VoidCallback? onEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -151,7 +220,9 @@ class _ProfileHeader extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Manage your pantry preferences',
+                    email.isEmpty ? 'Manage your pantry preferences' : email,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),

@@ -108,20 +108,4 @@ void main() {
     expect(provider.themeMode, ThemeMode.system);
     expect(provider.isSaving, isFalse);
   });
-
-  test('uses a default profile name when none is stored', () async {
-    await provider.initialize();
-
-    expect(provider.displayName, 'PantryPal User');
-  });
-
-  test('updates and stores the profile display name', () async {
-    await provider.initialize();
-
-    final success = await provider.setDisplayName('Tommy');
-
-    expect(success, isTrue);
-    expect(provider.displayName, 'Tommy');
-    expect(repository.getSettings().displayName, 'Tommy');
-  });
 }

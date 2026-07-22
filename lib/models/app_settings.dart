@@ -9,6 +9,8 @@ class AppSettings {
   @HiveField(0)
   final String themeModeKey;
 
+  // Legacy field. User names are now stored in Firebase Authentication.
+  // Do not reuse Hive field number 1.
   @HiveField(1)
   final String? displayName;
 
