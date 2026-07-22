@@ -187,7 +187,11 @@ class FoodItemProvider extends ChangeNotifier {
       }
 
       return true;
-    } catch (error) {
+    } catch (error, stackTrace) {
+      debugPrint('Food item add error: ${error.runtimeType} - $error');
+
+      debugPrintStack(stackTrace: stackTrace);
+
       _errorMessage = _getReadableError(error);
       return false;
     } finally {
@@ -321,6 +325,12 @@ class FoodItemProvider extends ChangeNotifier {
       return error.message;
     }
 
-    return 'Unable to complete the food inventory operation.';
+    debugPrint(
+      'Unhandled food inventory error: '
+      '${error.runtimeType} - $error',
+    );
+
+    return 'Unable to save the food item. '
+        'Check the terminal for the exact error.';
   }
 }

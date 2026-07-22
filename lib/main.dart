@@ -47,6 +47,10 @@ Future<void> main() async {
     Hive.registerAdapter(AppSettingsAdapter());
   }
 
+  if (!Hive.isAdapterRegistered(3)) {
+    Hive.registerAdapter(FoodItemAdapter());
+  }
+
   final authRepository = AuthRepository(firebase_auth.FirebaseAuth.instance);
 
   // Open Hive boxes.

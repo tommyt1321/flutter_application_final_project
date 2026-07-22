@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../dashboard/dashboard_screen.dart';
 import '../profile/profile_screen.dart';
+import '../inventory/inventory_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -13,25 +14,32 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _selectedIndex = 0;
 
-  static const List<Widget> _screens = [
-    DashboardScreen(),
-    _TemporaryModuleScreen(
-      icon: Icons.inventory_2_outlined,
-      title: 'Inventory',
-      message: 'The food inventory module will appear here.',
-    ),
-    _TemporaryModuleScreen(
-      icon: Icons.schedule_outlined,
-      title: 'Use First',
-      message: 'Expiry recommendations will appear here.',
-    ),
-    _TemporaryModuleScreen(
-      icon: Icons.shopping_cart_outlined,
-      title: 'Shopping',
-      message: 'The shopping-list module will appear here.',
-    ),
-    ProfileScreen(),
-  ];
+  late final List<Widget> _screens;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _screens = [
+      DashboardScreen(
+        onOpenInventory: () {
+          _changeScreen(1);
+        },
+      ),
+      const InventoryScreen(),
+      const _TemporaryModuleScreen(
+        icon: Icons.schedule_outlined,
+        title: 'Use First',
+        message: 'Expiry recommendations will appear here.',
+      ),
+      const _TemporaryModuleScreen(
+        icon: Icons.shopping_cart_outlined,
+        title: 'Shopping',
+        message: 'The shopping-list module will appear here.',
+      ),
+      const ProfileScreen(),
+    ];
+  }
 
   void _changeScreen(int index) {
     setState(() {
