@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../dashboard/dashboard_screen.dart';
+import '../expiry/use_first_screen.dart';
 import '../profile/profile_screen.dart';
 import '../inventory/inventory_screen.dart';
+import '../shopping/shopping_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -27,16 +29,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         },
       ),
       const InventoryScreen(),
-      const _TemporaryModuleScreen(
-        icon: Icons.schedule_outlined,
-        title: 'Use First',
-        message: 'Expiry recommendations will appear here.',
-      ),
-      const _TemporaryModuleScreen(
-        icon: Icons.shopping_cart_outlined,
-        title: 'Shopping',
-        message: 'The shopping-list module will appear here.',
-      ),
+      const UseFirstScreen(),
+      const ShoppingScreen(),
       const ProfileScreen(),
     ];
   }
@@ -81,50 +75,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             label: 'Profile',
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _TemporaryModuleScreen extends StatelessWidget {
-  const _TemporaryModuleScreen({
-    required this.icon,
-    required this.title,
-    required this.message,
-  });
-
-  final IconData icon;
-  final String title;
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                icon,
-                size: 72,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              const SizedBox(height: 20),
-              Text(title, style: Theme.of(context).textTheme.headlineMedium),
-              const SizedBox(height: 8),
-              Text(
-                message,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

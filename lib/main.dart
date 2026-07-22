@@ -1,26 +1,31 @@
 import 'package:device_preview/device_preview.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
-import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+
 import 'app.dart';
 import 'core/constants/hive_boxes.dart';
 import 'firebase_options.dart';
+import 'hive_registrar.g.dart';
 import 'models/app_settings.dart';
 import 'models/food_category.dart';
-import 'models/storage_location.dart';
 import 'models/food_item.dart';
-import 'providers/food_item_provider.dart';
-import 'providers/category_provider.dart';
-import 'providers/settings_provider.dart';
-import 'providers/storage_location_provider.dart';
+import 'models/shopping_item.dart';
+import 'models/storage_location.dart';
 import 'providers/auth_provider.dart';
-import 'repositories/food_item_repository.dart';
+import 'providers/category_provider.dart';
+import 'providers/food_item_provider.dart';
+import 'providers/settings_provider.dart';
+import 'providers/shopping_item_provider.dart';
+import 'providers/storage_location_provider.dart';
 import 'repositories/auth_repository.dart';
 import 'repositories/category_repository.dart';
+import 'repositories/food_item_repository.dart';
 import 'repositories/settings_repository.dart';
+import 'repositories/shopping_item_repository.dart';
 import 'repositories/storage_location_repository.dart';
 
 const bool showDevicePreview = true;
@@ -28,29 +33,18 @@ const bool showDevicePreview = true;
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase before using Firebase Authentication.
+  // Firebase must be initialized before Firebase Authentication is used.
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // Initialize the local Hive database.
   await Hive.initFlutter();
 
-  // Register Hive adapters.
-  if (!Hive.isAdapterRegistered(0)) {
-    Hive.registerAdapter(FoodCategoryAdapter());
-  }
+  // Registers all generated Hive adapters:
+  // AppSettings, FoodCategory, StorageLocation,
+  // FoodItem and ShoppingItem.
+  Hive.registerAdapters();
 
-  if (!Hive.isAdapterRegistered(1)) {
-    Hive.registerAdapter(StorageLocationAdapter());
-  }
-
-  if (!Hive.isAdapterRegistered(2)) {
-    Hive.registerAdapter(AppSettingsAdapter());
-  }
-
-  if (!Hive.isAdapterRegistered(3)) {
-    Hive.registerAdapter(FoodItemAdapter());
-  }
-
+  // Create Firebase repositories.
   final authRepository = AuthRepository(firebase_auth.FirebaseAuth.instance);
 
   // Open Hive boxes.
@@ -64,20 +58,24 @@ Future<void> main() async {
 
   final settingsBox = await Hive.openBox<AppSettings>(HiveBoxes.appSettings);
 
-  // Create repositories.
+  final foodItemBox = await Hive.openBox<FoodItem>('food_items');
+
+  final shoppingItemBox = await Hive.openBox<ShoppingItem>('shopping_items');
+
+  // Create Hive repositories.
   final categoryRepository = CategoryRepository(categoryBox);
 
   final storageLocationRepository = StorageLocationRepository(
     storageLocationBox,
   );
 
-  final foodItemBox = await Hive.openBox<FoodItem>('food_items');
+  final settingsRepository = SettingsRepository(settingsBox);
 
   final foodItemRepository = FoodItemRepository(foodItemBox);
 
-  final settingsRepository = SettingsRepository(settingsBox);
+  final shoppingItemRepository = ShoppingItemRepository(shoppingItemBox);
 
-  // Initialize settings before showing the application.
+  // Load saved appearance settings before displaying the app.
   final settingsProvider = SettingsProvider(settingsRepository);
 
   await settingsProvider.initialize();
@@ -95,6 +93,7 @@ Future<void> main() async {
                 return AuthProvider(authRepository);
               },
             ),
+
             ChangeNotifierProxyProvider<AuthProvider, CategoryProvider>(
               create: (_) {
                 return CategoryProvider(categoryRepository);
@@ -108,6 +107,7 @@ Future<void> main() async {
                 return provider;
               },
             ),
+
             ChangeNotifierProxyProvider<AuthProvider, StorageLocationProvider>(
               create: (_) {
                 return StorageLocationProvider(storageLocationRepository);
@@ -122,6 +122,7 @@ Future<void> main() async {
                 return provider;
               },
             ),
+
             ChangeNotifierProxyProvider<AuthProvider, FoodItemProvider>(
               create: (_) {
                 return FoodItemProvider(foodItemRepository);
@@ -135,6 +136,22 @@ Future<void> main() async {
                 return provider;
               },
             ),
+
+            ChangeNotifierProxyProvider<AuthProvider, ShoppingItemProvider>(
+              create: (_) {
+                return ShoppingItemProvider(shoppingItemRepository);
+              },
+              update: (_, authProvider, shoppingItemProvider) {
+                final provider =
+                    shoppingItemProvider ??
+                    ShoppingItemProvider(shoppingItemRepository);
+
+                provider.updateUserId(authProvider.userId);
+
+                return provider;
+              },
+            ),
+
             ChangeNotifierProvider<SettingsProvider>.value(
               value: settingsProvider,
             ),

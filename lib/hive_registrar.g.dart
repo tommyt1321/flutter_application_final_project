@@ -6,6 +6,7 @@ import 'package:hive_ce/hive_ce.dart';
 import 'package:flutter_application_final_project/models/app_settings.dart';
 import 'package:flutter_application_final_project/models/food_category.dart';
 import 'package:flutter_application_final_project/models/food_item.dart';
+import 'package:flutter_application_final_project/models/shopping_item.dart';
 import 'package:flutter_application_final_project/models/storage_location.dart';
 
 extension HiveRegistrar on HiveInterface {
@@ -13,6 +14,7 @@ extension HiveRegistrar on HiveInterface {
     registerAdapter(AppSettingsAdapter());
     registerAdapter(FoodCategoryAdapter());
     registerAdapter(FoodItemAdapter());
+    registerAdapter(ShoppingItemAdapter());
     registerAdapter(StorageLocationAdapter());
   }
 }
@@ -22,6 +24,7 @@ extension IsolatedHiveRegistrar on IsolatedHiveInterface {
     registerAdapter(AppSettingsAdapter());
     registerAdapter(FoodCategoryAdapter());
     registerAdapter(FoodItemAdapter());
+    registerAdapter(ShoppingItemAdapter());
     registerAdapter(StorageLocationAdapter());
   }
 }
