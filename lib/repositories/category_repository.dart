@@ -7,8 +7,10 @@ class CategoryRepository {
 
   final Box<FoodCategory> _box;
 
-  List<FoodCategory> getAllCategories() {
-    final categories = _box.values.toList();
+  List<FoodCategory> getCategoriesForUser(String userId) {
+    final categories = _box.values.where((category) {
+      return category.isDefault || category.ownerUserId == userId;
+    }).toList();
 
     categories.sort((first, second) {
       if (first.isDefault != second.isDefault) {
@@ -21,8 +23,18 @@ class CategoryRepository {
     return List<FoodCategory>.unmodifiable(categories);
   }
 
-  FoodCategory? getCategoryById(String id) {
-    return _box.get(id);
+  FoodCategory? getCategoryById({required String id, required String userId}) {
+    final category = _box.get(id);
+
+    if (category == null) {
+      return null;
+    }
+
+    if (category.isDefault || category.ownerUserId == userId) {
+      return category;
+    }
+
+    return null;
   }
 
   Future<void> seedDefaultCategories() async {
@@ -122,21 +134,46 @@ class CategoryRepository {
     }
   }
 
-  Future<void> addCategory(FoodCategory category) async {
+  /// Assigns custom categories created before Firebase Authentication
+  /// was added to the first currently signed-in user.
+  Future<void> migrateLegacyCustomCategories(String userId) async {
+    final categories = _box.values.toList(growable: false);
+
+    for (final category in categories) {
+      if (!category.isDefault && category.ownerUserId == null) {
+        await _box.put(category.id, category.copyWith(ownerUserId: userId));
+      }
+    }
+  }
+
+  Future<void> addCategory(
+    FoodCategory category, {
+    required String userId,
+  }) async {
     final trimmedName = category.name.trim();
 
     if (trimmedName.isEmpty) {
       throw ArgumentError('Category name cannot be empty.');
     }
 
-    if (_categoryNameExists(trimmedName)) {
+    if (_categoryNameExists(trimmedName, userId: userId)) {
       throw StateError('A category with this name already exists.');
     }
 
-    await _box.put(category.id, category.copyWith(name: trimmedName));
+    await _box.put(
+      category.id,
+      category.copyWith(
+        name: trimmedName,
+        isDefault: false,
+        ownerUserId: userId,
+      ),
+    );
   }
 
-  Future<void> updateCategory(FoodCategory category) async {
+  Future<void> updateCategory(
+    FoodCategory category, {
+    required String userId,
+  }) async {
     final existingCategory = _box.get(category.id);
 
     if (existingCategory == null) {
@@ -147,23 +184,38 @@ class CategoryRepository {
       throw StateError('Default categories cannot be edited.');
     }
 
+    if (existingCategory.ownerUserId != userId) {
+      throw StateError('You do not have permission to edit this category.');
+    }
+
     final trimmedName = category.name.trim();
 
     if (trimmedName.isEmpty) {
       throw ArgumentError('Category name cannot be empty.');
     }
 
-    if (_categoryNameExists(trimmedName, excludingId: category.id)) {
+    if (_categoryNameExists(
+      trimmedName,
+      userId: userId,
+      excludingId: category.id,
+    )) {
       throw StateError('A category with this name already exists.');
     }
 
     await _box.put(
       category.id,
-      category.copyWith(name: trimmedName, isDefault: false),
+      category.copyWith(
+        name: trimmedName,
+        isDefault: false,
+        ownerUserId: userId,
+      ),
     );
   }
 
-  Future<void> deleteCategory(String categoryId) async {
+  Future<void> deleteCategory(
+    String categoryId, {
+    required String userId,
+  }) async {
     final category = _box.get(categoryId);
 
     if (category == null) {
@@ -174,14 +226,26 @@ class CategoryRepository {
       throw StateError('Default categories cannot be deleted.');
     }
 
+    if (category.ownerUserId != userId) {
+      throw StateError('You do not have permission to delete this category.');
+    }
+
     await _box.delete(categoryId);
   }
 
-  bool _categoryNameExists(String name, {String? excludingId}) {
+  bool _categoryNameExists(
+    String name, {
+    required String userId,
+    String? excludingId,
+  }) {
     final normalizedName = name.trim().toLowerCase();
 
     return _box.values.any((category) {
-      return category.id != excludingId &&
+      final isVisibleToUser =
+          category.isDefault || category.ownerUserId == userId;
+
+      return isVisibleToUser &&
+          category.id != excludingId &&
           category.name.trim().toLowerCase() == normalizedName;
     });
   }

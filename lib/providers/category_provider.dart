@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../models/food_category.dart';
@@ -8,6 +10,7 @@ class CategoryProvider extends ChangeNotifier {
 
   final CategoryRepository _repository;
 
+  String? _userId;
   List<FoodCategory> _categories = [];
   bool _isLoading = false;
   bool _isSubmitting = false;
@@ -26,26 +29,75 @@ class CategoryProvider extends ChangeNotifier {
 
   int get categoryCount => _categories.length;
 
+  void updateUserId(String? userId) {
+    if (_userId == userId) {
+      return;
+    }
+
+    _userId = userId;
+
+    if (userId == null) {
+      _categories = [];
+      _isLoading = false;
+      _isSubmitting = false;
+      _errorMessage = null;
+
+      scheduleMicrotask(notifyListeners);
+      return;
+    }
+
+    scheduleMicrotask(() {
+      unawaited(initialize());
+    });
+  }
+
   Future<void> initialize() async {
+    final userId = _userId;
+
+    if (userId == null) {
+      _categories = [];
+      _isLoading = false;
+      _errorMessage = 'Please sign in to view categories.';
+      notifyListeners();
+      return;
+    }
+
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
       await _repository.seedDefaultCategories();
-      _loadCategories();
+
+      await _repository.migrateLegacyCustomCategories(userId);
+
+      if (_userId != userId) {
+        return;
+      }
+
+      _loadCategories(userId);
     } catch (error) {
-      _errorMessage = _getReadableError(error);
+      if (_userId == userId) {
+        _errorMessage = _getReadableError(error);
+      }
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      if (_userId == userId) {
+        _isLoading = false;
+        notifyListeners();
+      }
     }
   }
 
   void reloadCategories() {
+    final userId = _userId;
+
+    if (userId == null) {
+      return;
+    }
+
     try {
       _errorMessage = null;
-      _loadCategories();
+      _loadCategories(userId);
       notifyListeners();
     } catch (error) {
       _errorMessage = _getReadableError(error);
@@ -54,32 +106,50 @@ class CategoryProvider extends ChangeNotifier {
   }
 
   FoodCategory? getCategoryById(String id) {
-    return _repository.getCategoryById(id);
+    final userId = _userId;
+
+    if (userId == null) {
+      return null;
+    }
+
+    return _repository.getCategoryById(id: id, userId: userId);
   }
 
   Future<bool> addCategory({
     required String name,
     required String iconKey,
   }) async {
+    final userId = _userId;
+
+    if (userId == null) {
+      _errorMessage = 'Please sign in before adding a category.';
+      notifyListeners();
+      return false;
+    }
+
     _startSubmitting();
 
     try {
       final category = FoodCategory(
-        id: 'custom_category_${DateTime.now().microsecondsSinceEpoch}',
+        id:
+            'custom_category_'
+            '${DateTime.now().microsecondsSinceEpoch}',
         name: name,
         iconKey: iconKey,
         isDefault: false,
         createdAt: DateTime.now(),
+        ownerUserId: userId,
       );
 
-      await _repository.addCategory(category);
+      await _repository.addCategory(category, userId: userId);
 
-      _loadCategories();
+      if (_userId == userId) {
+        _loadCategories(userId);
+      }
 
       return true;
     } catch (error) {
       _errorMessage = _getReadableError(error);
-
       return false;
     } finally {
       _finishSubmitting();
@@ -91,19 +161,28 @@ class CategoryProvider extends ChangeNotifier {
     required String name,
     required String iconKey,
   }) async {
+    final userId = _userId;
+
+    if (userId == null) {
+      _errorMessage = 'Please sign in before editing a category.';
+      notifyListeners();
+      return false;
+    }
+
     _startSubmitting();
 
     try {
       final updatedCategory = category.copyWith(name: name, iconKey: iconKey);
 
-      await _repository.updateCategory(updatedCategory);
+      await _repository.updateCategory(updatedCategory, userId: userId);
 
-      _loadCategories();
+      if (_userId == userId) {
+        _loadCategories(userId);
+      }
 
       return true;
     } catch (error) {
       _errorMessage = _getReadableError(error);
-
       return false;
     } finally {
       _finishSubmitting();
@@ -111,17 +190,26 @@ class CategoryProvider extends ChangeNotifier {
   }
 
   Future<bool> deleteCategory(String categoryId) async {
+    final userId = _userId;
+
+    if (userId == null) {
+      _errorMessage = 'Please sign in before deleting a category.';
+      notifyListeners();
+      return false;
+    }
+
     _startSubmitting();
 
     try {
-      await _repository.deleteCategory(categoryId);
+      await _repository.deleteCategory(categoryId, userId: userId);
 
-      _loadCategories();
+      if (_userId == userId) {
+        _loadCategories(userId);
+      }
 
       return true;
     } catch (error) {
       _errorMessage = _getReadableError(error);
-
       return false;
     } finally {
       _finishSubmitting();
@@ -137,8 +225,8 @@ class CategoryProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _loadCategories() {
-    _categories = _repository.getAllCategories();
+  void _loadCategories(String userId) {
+    _categories = _repository.getCategoriesForUser(userId);
   }
 
   void _startSubmitting() {

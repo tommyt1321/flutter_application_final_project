@@ -22,13 +22,14 @@ class FoodCategoryAdapter extends TypeAdapter<FoodCategory> {
       iconKey: fields[2] as String,
       isDefault: fields[3] as bool,
       createdAt: fields[4] as DateTime,
+      ownerUserId: fields[5] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, FoodCategory obj) {
     writer
-      ..writeByte(5)
+      ..writeByte(6)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -38,7 +39,9 @@ class FoodCategoryAdapter extends TypeAdapter<FoodCategory> {
       ..writeByte(3)
       ..write(obj.isDefault)
       ..writeByte(4)
-      ..write(obj.createdAt);
+      ..write(obj.createdAt)
+      ..writeByte(5)
+      ..write(obj.ownerUserId);
   }
 
   @override

@@ -84,9 +84,17 @@ Future<void> main() async {
                 return AuthProvider(authRepository);
               },
             ),
-            ChangeNotifierProvider<CategoryProvider>(
+            ChangeNotifierProxyProvider<AuthProvider, CategoryProvider>(
               create: (_) {
-                return CategoryProvider(categoryRepository)..initialize();
+                return CategoryProvider(categoryRepository);
+              },
+              update: (_, authProvider, categoryProvider) {
+                final provider =
+                    categoryProvider ?? CategoryProvider(categoryRepository);
+
+                provider.updateUserId(authProvider.userId);
+
+                return provider;
               },
             ),
             ChangeNotifierProvider<StorageLocationProvider>(
