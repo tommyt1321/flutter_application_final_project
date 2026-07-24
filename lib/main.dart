@@ -47,9 +47,11 @@ Future<void> main() async {
 
   final settingsBox = await Hive.openBox<AppSettings>(HiveBoxes.appSettings);
 
-  final foodItemBox = await Hive.openBox<FoodItem>('food_items');
+  final foodItemBox = await Hive.openBox<FoodItem>(HiveBoxes.foodItems);
 
-  final shoppingItemBox = await Hive.openBox<ShoppingItem>('shopping_items');
+  final shoppingItemBox = await Hive.openBox<ShoppingItem>(
+    HiveBoxes.shoppingItems,
+  );
 
   final categoryRepository = CategoryRepository(categoryBox);
 

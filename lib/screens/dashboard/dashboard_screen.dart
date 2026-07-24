@@ -16,10 +16,12 @@ class DashboardScreen extends StatelessWidget {
     super.key,
     this.onOpenInventory,
     this.onOpenNotifications,
+    this.onOpenUseFirst,
   });
 
   final VoidCallback? onOpenInventory;
   final VoidCallback? onOpenNotifications;
+  final VoidCallback? onOpenUseFirst;
 
   // Temporary low-stock rule.
   // This can later be replaced with a user-defined threshold.
@@ -162,7 +164,7 @@ class DashboardScreen extends StatelessWidget {
                           style: Theme.of(context).textTheme.titleLarge,
                         ),
                         TextButton(
-                          onPressed: onOpenInventory,
+                          onPressed: onOpenUseFirst,
                           child: const Text('View All'),
                         ),
                       ],

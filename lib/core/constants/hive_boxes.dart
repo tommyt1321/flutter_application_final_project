@@ -5,7 +5,5 @@ class HiveBoxes {
   static const String storageLocations = 'storage_locations';
   static const String appSettings = 'app_settings';
   static const String foodItems = 'food_items';
-  static const String notifications = 'notifications';
   static const String shoppingItems = 'shopping_items';
-  static const String foodActivities = 'food_activities';
 }

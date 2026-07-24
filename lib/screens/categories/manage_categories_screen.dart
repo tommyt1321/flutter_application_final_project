@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/utils/category_icon_mapper.dart';
 import '../../models/food_category.dart';
 import '../../providers/category_provider.dart';
+import '../../providers/food_item_provider.dart';
 import '../../widgets/confirmation_dialog.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/error_view.dart';
@@ -42,10 +43,42 @@ class ManageCategoriesScreen extends StatelessWidget {
     BuildContext context,
     FoodCategory category,
   ) async {
+    final foodItemProvider = context.read<FoodItemProvider?>();
+
+    if (foodItemProvider == null) {
+      _showMessage(
+        context,
+        'Unable to verify whether this category is currently in use.',
+      );
+      return;
+    }
+
+    final linkedItems = foodItemProvider.getItemsByCategory(category.id);
+
+    if (linkedItems.isNotEmpty) {
+      final itemCount = linkedItems.length;
+
+      final itemText = itemCount == 1
+          ? '1 food item uses'
+          : '$itemCount food items use';
+
+      _showMessage(
+        context,
+        '$itemText "${category.name}". '
+        'Move or delete the food '
+        '${itemCount == 1 ? 'item' : 'items'} '
+        'before deleting this category.',
+      );
+
+      return;
+    }
+
     final shouldDelete = await showConfirmationDialog(
       context: context,
       title: 'Delete category?',
-      message: 'The category "${category.name}" will be permanently removed.',
+      message:
+          'The category "${category.name}" '
+          'will be permanently removed.',
       confirmText: 'Delete',
       isDestructive: true,
     );
@@ -66,9 +99,13 @@ class ManageCategoriesScreen extends StatelessWidget {
         ? 'Category deleted successfully.'
         : provider.errorMessage ?? 'Unable to delete the category.';
 
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    _showMessage(context, message);
+  }
+
+  void _showMessage(BuildContext context, String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override

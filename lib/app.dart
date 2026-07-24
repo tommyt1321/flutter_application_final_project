@@ -18,7 +18,7 @@ class PantryPalApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: settingsProvider?.themeMode ?? ThemeMode.light,
+      themeMode: settingsProvider?.themeMode ?? ThemeMode.system,
       initialRoute: AppRoutes.splash,
       onGenerateRoute: RouteGenerator.generateRoute,
     );

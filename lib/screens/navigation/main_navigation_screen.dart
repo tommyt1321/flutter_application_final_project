@@ -6,6 +6,7 @@ import '../inventory/inventory_screen.dart';
 import '../notifications/notifications_screen.dart';
 import '../profile/profile_screen.dart';
 import '../shopping/shopping_screen.dart';
+import '../../widgets/app_bottom_navigation.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -27,6 +28,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       DashboardScreen(
         onOpenInventory: () {
           _changeScreen(1);
+        },
+        onOpenUseFirst: () {
+          _changeScreen(2);
         },
         onOpenNotifications: _openNotifications,
       ),
@@ -61,36 +65,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(index: _selectedIndex, children: _screens),
-      bottomNavigationBar: NavigationBar(
+      bottomNavigationBar: AppBottomNavigation(
         selectedIndex: _selectedIndex,
         onDestinationSelected: _changeScreen,
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home_rounded),
-            label: 'Home',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.inventory_2_outlined),
-            selectedIcon: Icon(Icons.inventory_2_rounded),
-            label: 'Inventory',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.schedule_outlined),
-            selectedIcon: Icon(Icons.schedule_rounded),
-            label: 'Use First',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.shopping_cart_outlined),
-            selectedIcon: Icon(Icons.shopping_cart_rounded),
-            label: 'Shopping',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person_rounded),
-            label: 'Profile',
-          ),
-        ],
       ),
     );
   }

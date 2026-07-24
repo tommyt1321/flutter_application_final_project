@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/utils/storage_location_icon_mapper.dart';
 import '../../models/storage_location.dart';
+import '../../providers/food_item_provider.dart';
 import '../../providers/storage_location_provider.dart';
 import '../../widgets/confirmation_dialog.dart';
 import '../../widgets/empty_state.dart';
@@ -44,10 +45,42 @@ class ManageStorageLocationsScreen extends StatelessWidget {
     BuildContext context,
     StorageLocation location,
   ) async {
+    final foodItemProvider = context.read<FoodItemProvider?>();
+
+    if (foodItemProvider == null) {
+      _showMessage(
+        context,
+        'Unable to verify whether this storage location is currently in use.',
+      );
+      return;
+    }
+
+    final linkedItems = foodItemProvider.getItemsByLocation(location.id);
+
+    if (linkedItems.isNotEmpty) {
+      final itemCount = linkedItems.length;
+
+      final itemText = itemCount == 1
+          ? '1 food item is stored'
+          : '$itemCount food items are stored';
+
+      _showMessage(
+        context,
+        '$itemText in "${location.name}". '
+        'Move or delete the food '
+        '${itemCount == 1 ? 'item' : 'items'} '
+        'before deleting this storage location.',
+      );
+
+      return;
+    }
+
     final shouldDelete = await showConfirmationDialog(
       context: context,
       title: 'Delete storage location?',
-      message: 'The location "${location.name}" will be permanently removed.',
+      message:
+          'The location "${location.name}" '
+          'will be permanently removed.',
       confirmText: 'Delete',
       isDestructive: true,
     );
@@ -68,9 +101,13 @@ class ManageStorageLocationsScreen extends StatelessWidget {
         ? 'Storage location deleted successfully.'
         : provider.errorMessage ?? 'Unable to delete the storage location.';
 
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    _showMessage(context, message);
+  }
+
+  void _showMessage(BuildContext context, String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
