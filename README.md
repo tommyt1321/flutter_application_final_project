@@ -1,17 +1,31 @@
-# flutter_application_final_project
+# PantryPal
 
-A new Flutter project.
+PantryPal is a Flutter-based digital food pantry and expiry tracking application.
 
-## Getting Started
+## Main Features
 
-This project is a starting point for a Flutter application.
+- Food inventory CRUD
+- Expiry-date tracking
+- Expiry reminders
+- Use First recommendations
+- Low-stock detection
+- Shopping-list management
+- Food activity history
+- Food consumption and waste analytics
+- Category and storage-location management
+- User profile and settings
 
-A few resources to get you started if this is your first Flutter project:
+## Technology
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+- Flutter
+- Dart
+- Provider
+- Hive
+- Local notifications
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Team Modules
+
+- Person 1: UI/UX, app foundation, dashboard, categories, storage and settings
+- Person 2: Food inventory CRUD and persistence
+- Person 3: State management, expiry tracking and notifications
+- Person 4: Shopping list, food activities, analytics and testing
