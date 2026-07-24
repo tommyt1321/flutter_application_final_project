@@ -5,11 +5,13 @@ import 'package:provider/provider.dart';
 import '../../models/food_item.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/food_item_provider.dart';
+import '../../providers/shopping_item_provider.dart';
 import '../../providers/storage_location_provider.dart';
 import 'food_item_form_screen.dart';
 
 class InventoryScreen extends StatelessWidget {
   const InventoryScreen({super.key});
+  static const double _lowStockThreshold = 2;
 
   @override
   Widget build(BuildContext context) {
@@ -20,6 +22,8 @@ class InventoryScreen extends StatelessWidget {
     final categoryProvider = context.watch<CategoryProvider?>();
 
     final storageLocationProvider = context.watch<StorageLocationProvider?>();
+
+    final shoppingItemProvider = context.watch<ShoppingItemProvider?>();
 
     if (foodItemProvider == null ||
         categoryProvider == null ||
@@ -50,6 +54,7 @@ class InventoryScreen extends StatelessWidget {
         foodItemProvider: foodItemProvider,
         categoryProvider: categoryProvider,
         storageLocationProvider: storageLocationProvider,
+        shoppingItemProvider: shoppingItemProvider,
       ),
     );
   }
@@ -59,6 +64,7 @@ class InventoryScreen extends StatelessWidget {
     required FoodItemProvider foodItemProvider,
     required CategoryProvider categoryProvider,
     required StorageLocationProvider storageLocationProvider,
+    required ShoppingItemProvider? shoppingItemProvider,
   }) {
     if (foodItemProvider.isLoading && !foodItemProvider.hasItems) {
       return const Center(child: CircularProgressIndicator());
@@ -129,12 +135,22 @@ class InventoryScreen extends StatelessWidget {
                         ?.name ??
                     'Unknown location';
 
+                final isLowStock = item.quantity <= _lowStockThreshold;
+
+                final isInShoppingList =
+                    shoppingItemProvider?.containsItemNamed(item.name) ?? false;
+
                 return _FoodItemCard(
                   item: item,
                   categoryName: categoryName,
                   locationName: locationName,
+                  isLowStock: isLowStock,
+                  isInShoppingList: isInShoppingList,
                   onEdit: () {
                     _openFoodItemForm(context, item: item);
+                  },
+                  onAddToShoppingList: () {
+                    _addToShoppingList(context, item);
                   },
                   onDelete: () {
                     _deleteFoodItem(context, item);
@@ -156,6 +172,43 @@ class InventoryScreen extends StatelessWidget {
         },
       ),
     );
+  }
+
+  Future<void> _addToShoppingList(BuildContext context, FoodItem item) async {
+    final provider = context.read<ShoppingItemProvider?>();
+
+    if (provider == null) {
+      _showMessage(context, 'The shopping list is currently unavailable.');
+      return;
+    }
+
+    if (provider.containsItemNamed(item.name)) {
+      _showMessage(context, '${item.name} is already in your shopping list.');
+      return;
+    }
+
+    final success = await provider.addItem(
+      name: item.name,
+      quantity: 1,
+      unit: item.unit,
+    );
+
+    if (!context.mounted) {
+      return;
+    }
+
+    final message = success
+        ? '${item.name} was added to your shopping list.'
+        : provider.errorMessage ??
+              'Unable to add the item to your shopping list.';
+
+    _showMessage(context, message);
+  }
+
+  void _showMessage(BuildContext context, String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _deleteFoodItem(BuildContext context, FoodItem item) async {
@@ -299,19 +352,27 @@ class _FoodItemCard extends StatelessWidget {
     required this.item,
     required this.categoryName,
     required this.locationName,
+    required this.isLowStock,
+    required this.isInShoppingList,
     required this.onEdit,
+    required this.onAddToShoppingList,
     required this.onDelete,
   });
 
   final FoodItem item;
   final String categoryName;
   final String locationName;
+  final bool isLowStock;
+  final bool isInShoppingList;
   final VoidCallback onEdit;
+  final VoidCallback onAddToShoppingList;
   final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
     final expiryPresentation = _getExpiryPresentation(context, item.expiryDate);
+
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -322,7 +383,7 @@ class _FoodItemCard extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CircleAvatar(child: const Icon(Icons.fastfood_outlined)),
+              const CircleAvatar(child: Icon(Icons.fastfood_outlined)),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
@@ -340,6 +401,44 @@ class _FoodItemCard extends StatelessWidget {
                       '${item.unit}',
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
+
+                    if (isLowStock) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: colorScheme.errorContainer,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              isInShoppingList
+                                  ? Icons.shopping_cart_checkout_rounded
+                                  : Icons.remove_shopping_cart_outlined,
+                              size: 15,
+                              color: colorScheme.onErrorContainer,
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              isInShoppingList
+                                  ? 'Low stock • In shopping list'
+                                  : 'Low stock',
+                              style: Theme.of(context).textTheme.labelSmall
+                                  ?.copyWith(
+                                    color: colorScheme.onErrorContainer,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+
                     const SizedBox(height: 8),
                     _InformationLine(
                       icon: Icons.category_outlined,
@@ -369,14 +468,18 @@ class _FoodItemCard extends StatelessWidget {
                       onEdit();
                       break;
 
+                    case 'add_to_shopping':
+                      onAddToShoppingList();
+                      break;
+
                     case 'delete':
                       onDelete();
                       break;
                   }
                 },
                 itemBuilder: (_) {
-                  return const [
-                    PopupMenuItem<String>(
+                  return [
+                    const PopupMenuItem<String>(
                       value: 'edit',
                       child: ListTile(
                         contentPadding: EdgeInsets.zero,
@@ -384,7 +487,27 @@ class _FoodItemCard extends StatelessWidget {
                         title: Text('Edit'),
                       ),
                     ),
-                    PopupMenuItem<String>(
+
+                    if (isLowStock)
+                      PopupMenuItem<String>(
+                        value: 'add_to_shopping',
+                        enabled: !isInShoppingList,
+                        child: ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: Icon(
+                            isInShoppingList
+                                ? Icons.check_circle_outline
+                                : Icons.add_shopping_cart_outlined,
+                          ),
+                          title: Text(
+                            isInShoppingList
+                                ? 'Already in Shopping List'
+                                : 'Add to Shopping List',
+                          ),
+                        ),
+                      ),
+
+                    const PopupMenuItem<String>(
                       value: 'delete',
                       child: ListTile(
                         contentPadding: EdgeInsets.zero,

@@ -39,6 +39,14 @@ class ShoppingItemProvider extends ChangeNotifier {
 
   int get completedCount => completedItems.length;
 
+  bool containsItemNamed(String name) {
+    final normalizedName = name.trim().toLowerCase();
+
+    return _items.any((item) {
+      return item.name.trim().toLowerCase() == normalizedName;
+    });
+  }
+
   void updateUserId(String? userId) {
     if (_userId == userId) {
       return;

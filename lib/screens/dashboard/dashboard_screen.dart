@@ -135,11 +135,14 @@ class DashboardScreen extends StatelessWidget {
                           icon: Icons.warning_amber_rounded,
                           color: AppColors.expired,
                         ),
-                        DashboardSummaryCard(
-                          title: 'Low Stock',
-                          value: lowStockCount.toString(),
-                          icon: Icons.remove_shopping_cart_outlined,
-                          color: AppColors.lowStock,
+                        GestureDetector(
+                          onTap: lowStockCount > 0 ? onOpenInventory : null,
+                          child: DashboardSummaryCard(
+                            title: 'Low Stock',
+                            value: lowStockCount.toString(),
+                            icon: Icons.remove_shopping_cart_outlined,
+                            color: AppColors.lowStock,
+                          ),
                         ),
                       ],
                     ),
