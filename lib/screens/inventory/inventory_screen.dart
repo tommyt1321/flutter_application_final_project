@@ -278,29 +278,33 @@ class _InventorySummary extends StatelessWidget {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          alignment: WrapAlignment.spaceAround,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _SummaryItem(
-              icon: Icons.inventory_2_outlined,
-              value: totalItems,
-              label: 'Total items',
-              iconColor: colorScheme.primary,
+            Expanded(
+              child: _SummaryItem(
+                icon: Icons.inventory_2_outlined,
+                value: totalItems,
+                label: 'Total items',
+                iconColor: colorScheme.primary,
+              ),
             ),
-            _SummaryItem(
-              icon: Icons.schedule_outlined,
-              value: expiringSoon,
-              label: 'Expiring soon',
-              iconColor: colorScheme.tertiary,
+            Expanded(
+              child: _SummaryItem(
+                icon: Icons.schedule_outlined,
+                value: expiringSoon,
+                label: 'Expiring soon',
+                iconColor: colorScheme.tertiary,
+              ),
             ),
-            _SummaryItem(
-              icon: Icons.warning_amber_rounded,
-              value: expired,
-              label: 'Expired',
-              iconColor: colorScheme.error,
+            Expanded(
+              child: _SummaryItem(
+                icon: Icons.warning_amber_rounded,
+                value: expired,
+                label: 'Expired',
+                iconColor: colorScheme.error,
+              ),
             ),
           ],
         ),
@@ -324,25 +328,26 @@ class _SummaryItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 100,
-      child: Column(
-        children: [
-          Icon(icon, color: iconColor),
-          const SizedBox(height: 6),
-          Text(
-            value.toString(),
-            style: Theme.of(
-              context,
-            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-        ],
-      ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, color: iconColor),
+        const SizedBox(height: 6),
+        Text(
+          value.toString(),
+          style: Theme.of(
+            context,
+          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+      ],
     );
   }
 }

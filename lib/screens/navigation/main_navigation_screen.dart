@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../dashboard/dashboard_screen.dart';
 import '../expiry/use_first_screen.dart';
-import '../profile/profile_screen.dart';
 import '../inventory/inventory_screen.dart';
+import '../notifications/notifications_screen.dart';
+import '../profile/profile_screen.dart';
 import '../shopping/shopping_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
@@ -27,6 +28,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         onOpenInventory: () {
           _changeScreen(1);
         },
+        onOpenNotifications: _openNotifications,
       ),
       const InventoryScreen(),
       const UseFirstScreen(),
@@ -36,9 +38,23 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   }
 
   void _changeScreen(int index) {
+    if (_selectedIndex == index) {
+      return;
+    }
+
     setState(() {
       _selectedIndex = index;
     });
+  }
+
+  void _openNotifications() {
+    Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) {
+          return const NotificationsScreen();
+        },
+      ),
+    );
   }
 
   @override

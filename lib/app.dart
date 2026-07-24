@@ -1,4 +1,3 @@
-import 'package:device_preview/device_preview.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -9,10 +8,7 @@ import 'core/theme/app_theme.dart';
 import 'providers/settings_provider.dart';
 
 class PantryPalApp extends StatelessWidget {
-  const PantryPalApp({this.enableDevicePreview = false, super.key});
-
-  final bool enableDevicePreview;
-
+  const PantryPalApp({super.key});
   @override
   Widget build(BuildContext context) {
     final settingsProvider = context.watch<SettingsProvider?>();
@@ -20,8 +16,6 @@ class PantryPalApp extends StatelessWidget {
     return MaterialApp(
       title: AppStrings.appName,
       debugShowCheckedModeBanner: false,
-      locale: enableDevicePreview ? DevicePreview.locale(context) : null,
-      builder: enableDevicePreview ? DevicePreview.appBuilder : null,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: settingsProvider?.themeMode ?? ThemeMode.light,

@@ -1,7 +1,5 @@
-import 'package:device_preview/device_preview.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
@@ -28,26 +26,17 @@ import 'repositories/settings_repository.dart';
 import 'repositories/shopping_item_repository.dart';
 import 'repositories/storage_location_repository.dart';
 
-const bool showDevicePreview = true;
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Firebase must be initialized before Firebase Authentication is used.
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // Initialize the local Hive database.
   await Hive.initFlutter();
 
-  // Registers all generated Hive adapters:
-  // AppSettings, FoodCategory, StorageLocation,
-  // FoodItem and ShoppingItem.
   Hive.registerAdapters();
 
-  // Create Firebase repositories.
   final authRepository = AuthRepository(firebase_auth.FirebaseAuth.instance);
 
-  // Open Hive boxes.
   final categoryBox = await Hive.openBox<FoodCategory>(
     HiveBoxes.foodCategories,
   );
@@ -62,7 +51,6 @@ Future<void> main() async {
 
   final shoppingItemBox = await Hive.openBox<ShoppingItem>('shopping_items');
 
-  // Create Hive repositories.
   final categoryRepository = CategoryRepository(categoryBox);
 
   final storageLocationRepository = StorageLocationRepository(
@@ -75,90 +63,80 @@ Future<void> main() async {
 
   final shoppingItemRepository = ShoppingItemRepository(shoppingItemBox);
 
-  // Load saved appearance settings before displaying the app.
   final settingsProvider = SettingsProvider(settingsRepository);
 
   await settingsProvider.initialize();
 
-  final isDevicePreviewEnabled = !kReleaseMode && showDevicePreview;
-
   runApp(
-    DevicePreview(
-      enabled: isDevicePreviewEnabled,
-      builder: (context) {
-        return MultiProvider(
-          providers: [
-            ChangeNotifierProvider<AuthProvider>(
-              create: (_) {
-                return AuthProvider(authRepository);
-              },
-            ),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider<AuthProvider>(
+          create: (_) {
+            return AuthProvider(authRepository);
+          },
+        ),
 
-            ChangeNotifierProxyProvider<AuthProvider, CategoryProvider>(
-              create: (_) {
-                return CategoryProvider(categoryRepository);
-              },
-              update: (_, authProvider, categoryProvider) {
-                final provider =
-                    categoryProvider ?? CategoryProvider(categoryRepository);
+        ChangeNotifierProxyProvider<AuthProvider, CategoryProvider>(
+          create: (_) {
+            return CategoryProvider(categoryRepository);
+          },
+          update: (_, authProvider, categoryProvider) {
+            final provider =
+                categoryProvider ?? CategoryProvider(categoryRepository);
 
-                provider.updateUserId(authProvider.userId);
+            provider.updateUserId(authProvider.userId);
 
-                return provider;
-              },
-            ),
+            return provider;
+          },
+        ),
 
-            ChangeNotifierProxyProvider<AuthProvider, StorageLocationProvider>(
-              create: (_) {
-                return StorageLocationProvider(storageLocationRepository);
-              },
-              update: (_, authProvider, storageLocationProvider) {
-                final provider =
-                    storageLocationProvider ??
-                    StorageLocationProvider(storageLocationRepository);
+        ChangeNotifierProxyProvider<AuthProvider, StorageLocationProvider>(
+          create: (_) {
+            return StorageLocationProvider(storageLocationRepository);
+          },
+          update: (_, authProvider, storageLocationProvider) {
+            final provider =
+                storageLocationProvider ??
+                StorageLocationProvider(storageLocationRepository);
 
-                provider.updateUserId(authProvider.userId);
+            provider.updateUserId(authProvider.userId);
 
-                return provider;
-              },
-            ),
+            return provider;
+          },
+        ),
 
-            ChangeNotifierProxyProvider<AuthProvider, FoodItemProvider>(
-              create: (_) {
-                return FoodItemProvider(foodItemRepository);
-              },
-              update: (_, authProvider, foodItemProvider) {
-                final provider =
-                    foodItemProvider ?? FoodItemProvider(foodItemRepository);
+        ChangeNotifierProxyProvider<AuthProvider, FoodItemProvider>(
+          create: (_) {
+            return FoodItemProvider(foodItemRepository);
+          },
+          update: (_, authProvider, foodItemProvider) {
+            final provider =
+                foodItemProvider ?? FoodItemProvider(foodItemRepository);
 
-                provider.updateUserId(authProvider.userId);
+            provider.updateUserId(authProvider.userId);
 
-                return provider;
-              },
-            ),
+            return provider;
+          },
+        ),
 
-            ChangeNotifierProxyProvider<AuthProvider, ShoppingItemProvider>(
-              create: (_) {
-                return ShoppingItemProvider(shoppingItemRepository);
-              },
-              update: (_, authProvider, shoppingItemProvider) {
-                final provider =
-                    shoppingItemProvider ??
-                    ShoppingItemProvider(shoppingItemRepository);
+        ChangeNotifierProxyProvider<AuthProvider, ShoppingItemProvider>(
+          create: (_) {
+            return ShoppingItemProvider(shoppingItemRepository);
+          },
+          update: (_, authProvider, shoppingItemProvider) {
+            final provider =
+                shoppingItemProvider ??
+                ShoppingItemProvider(shoppingItemRepository);
 
-                provider.updateUserId(authProvider.userId);
+            provider.updateUserId(authProvider.userId);
 
-                return provider;
-              },
-            ),
+            return provider;
+          },
+        ),
 
-            ChangeNotifierProvider<SettingsProvider>.value(
-              value: settingsProvider,
-            ),
-          ],
-          child: PantryPalApp(enableDevicePreview: isDevicePreviewEnabled),
-        );
-      },
+        ChangeNotifierProvider<SettingsProvider>.value(value: settingsProvider),
+      ],
+      child: const PantryPalApp(),
     ),
   );
 }

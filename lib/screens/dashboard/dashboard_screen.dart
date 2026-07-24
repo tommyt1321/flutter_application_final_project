@@ -12,9 +12,14 @@ import '../../widgets/dashboard_summary_card.dart';
 import '../inventory/food_item_form_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
-  const DashboardScreen({super.key, this.onOpenInventory});
+  const DashboardScreen({
+    super.key,
+    this.onOpenInventory,
+    this.onOpenNotifications,
+  });
 
   final VoidCallback? onOpenInventory;
+  final VoidCallback? onOpenNotifications;
 
   // Temporary low-stock rule.
   // This can later be replaced with a user-defined threshold.
@@ -47,7 +52,9 @@ class DashboardScreen extends StatelessWidget {
         .take(3)
         .toList();
 
-    final notificationCount = expiringSoonCount + expiredCount;
+    final notificationCount = items.where((item) {
+      return _needsAttention(item) || item.quantity <= _lowStockThreshold;
+    }).length;
 
     return Scaffold(
       appBar: AppBar(
@@ -215,7 +222,9 @@ class DashboardScreen extends StatelessWidget {
       return;
     }
 
-    onOpenInventory?.call();
+    final openNotifications = onOpenNotifications ?? onOpenInventory;
+
+    openNotifications?.call();
   }
 
   Future<void> _openFoodItemForm(BuildContext context, {FoodItem? item}) async {
