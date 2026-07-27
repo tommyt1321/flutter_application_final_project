@@ -144,14 +144,12 @@ class DashboardScreen extends StatelessWidget {
                           icon: Icons.warning_amber_rounded,
                           color: AppColors.expired,
                         ),
-                        GestureDetector(
+                        DashboardSummaryCard(
+                          title: 'Low Stock',
+                          value: lowStockCount.toString(),
+                          icon: Icons.remove_shopping_cart_outlined,
+                          color: AppColors.lowStock,
                           onTap: lowStockCount > 0 ? onOpenInventory : null,
-                          child: DashboardSummaryCard(
-                            title: 'Low Stock',
-                            value: lowStockCount.toString(),
-                            icon: Icons.remove_shopping_cart_outlined,
-                            color: AppColors.lowStock,
-                          ),
                         ),
                       ],
                     ),
@@ -309,15 +307,14 @@ class _WelcomeCard extends StatelessWidget {
 
           if (isNarrow) {
             return Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const _WelcomeText(),
-                const SizedBox(height: 20),
-                AppButton(
-                  text: 'Add Food',
-                  icon: Icons.add,
-                  isOutlined: true,
-                  onPressed: onAddFood,
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: _DashboardAddFoodButton(onPressed: onAddFood),
                 ),
               ],
             );
@@ -328,17 +325,39 @@ class _WelcomeCard extends StatelessWidget {
               const Expanded(child: _WelcomeText()),
               const SizedBox(width: 20),
               SizedBox(
-                width: 200,
-                child: AppButton(
-                  text: 'Add Food',
-                  icon: Icons.add,
-                  isOutlined: true,
-                  onPressed: onAddFood,
-                ),
+                width: 190,
+                child: _DashboardAddFoodButton(onPressed: onAddFood),
               ),
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+class _DashboardAddFoodButton extends StatelessWidget {
+  const _DashboardAddFoodButton({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      key: const Key('dashboard_add_food_button'),
+      onPressed: onPressed,
+      style: OutlinedButton.styleFrom(
+        foregroundColor: Colors.white,
+        backgroundColor: Colors.white.withAlpha(20),
+        side: const BorderSide(color: Colors.white70, width: 1.2),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+        minimumSize: const Size(0, 46),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      ),
+      icon: const Icon(Icons.add_rounded, size: 20),
+      label: const Text(
+        'Add Food',
+        style: TextStyle(fontWeight: FontWeight.w600),
       ),
     );
   }
