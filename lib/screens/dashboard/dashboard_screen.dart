@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-
+import '../../providers/notification_provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/food_item.dart';
 import '../../providers/category_provider.dart';
@@ -29,19 +29,19 @@ class DashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final foodItemProvider = context.watch<FoodItemProvider?>();
+    final foodItemProvider = context.watch<FoodItemProvider>();
 
     final categoryProvider = context.watch<CategoryProvider?>();
 
     final storageLocationProvider = context.watch<StorageLocationProvider?>();
 
-    final items = foodItemProvider?.items ?? const <FoodItem>[];
+    final items = foodItemProvider.items;
+
+    final expiringSoonCount = foodItemProvider.expiringSoonItems.length;
+
+    final expiredCount = foodItemProvider.expiredItems.length;
 
     final totalItems = items.length;
-
-    final expiringSoonCount = foodItemProvider?.expiringSoonItems.length ?? 0;
-
-    final expiredCount = foodItemProvider?.expiredItems.length ?? 0;
 
     final lowStockCount = items.where((item) {
       return item.quantity <= _lowStockThreshold;
@@ -54,9 +54,9 @@ class DashboardScreen extends StatelessWidget {
         .take(3)
         .toList();
 
-    final notificationCount = items.where((item) {
-      return _needsAttention(item) || item.quantity <= _lowStockThreshold;
-    }).length;
+    final notificationProvider = context.watch<NotificationProvider>();
+
+    final notificationCount = notificationProvider.getNotificationCount(items);
 
     return Scaffold(
       appBar: AppBar(
@@ -95,7 +95,7 @@ class DashboardScreen extends StatelessWidget {
 
             return RefreshIndicator(
               onRefresh: () async {
-                foodItemProvider?.reloadItems();
+                foodItemProvider.reloadItems();
               },
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
@@ -103,7 +103,7 @@ class DashboardScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (foodItemProvider?.isLoading ?? false) ...[
+                    if (foodItemProvider.isLoading) ...[
                       const LinearProgressIndicator(),
                       const SizedBox(height: 12),
                     ],
@@ -168,9 +168,9 @@ class DashboardScreen extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 8),
-                    if (foodItemProvider?.errorMessage != null && items.isEmpty)
+                    if (foodItemProvider.errorMessage != null && items.isEmpty)
                       _DashboardErrorCard(
-                        message: foodItemProvider!.errorMessage!,
+                        message: foodItemProvider.errorMessage!,
                         onRetry: foodItemProvider.reloadItems,
                       )
                     else if (useFirstItems.isEmpty)
@@ -228,19 +228,9 @@ class DashboardScreen extends StatelessWidget {
   }
 
   Future<void> _openFoodItemForm(BuildContext context, {FoodItem? item}) async {
-    final foodItemProvider = context.read<FoodItemProvider?>();
+    final categoryProvider = context.read<CategoryProvider>();
 
-    final categoryProvider = context.read<CategoryProvider?>();
-
-    final storageLocationProvider = context.read<StorageLocationProvider?>();
-
-    if (foodItemProvider == null ||
-        categoryProvider == null ||
-        storageLocationProvider == null) {
-      _showMessage(context, 'The food inventory is currently unavailable.');
-
-      return;
-    }
+    final storageLocationProvider = context.read<StorageLocationProvider>();
 
     if (categoryProvider.categories.isEmpty ||
         storageLocationProvider.locations.isEmpty) {

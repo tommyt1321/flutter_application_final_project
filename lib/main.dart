@@ -3,7 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
-
+import 'providers/notification_provider.dart';
 import 'app.dart';
 import 'core/constants/hive_boxes.dart';
 import 'firebase_options.dart';
@@ -72,6 +72,12 @@ Future<void> main() async {
   runApp(
     MultiProvider(
       providers: [
+
+        ChangeNotifierProvider(
+          create: (_) =>
+              NotificationProvider()..loadClearedNotifications(),
+        ),
+
         ChangeNotifierProvider<AuthProvider>(
           create: (_) {
             return AuthProvider(authRepository);
@@ -111,9 +117,9 @@ Future<void> main() async {
           create: (_) {
             return FoodItemProvider(foodItemRepository);
           },
-          update: (_, authProvider, foodItemProvider) {
+          update: (_, authProvider, previousProvider) {
             final provider =
-                foodItemProvider ?? FoodItemProvider(foodItemRepository);
+                previousProvider ?? FoodItemProvider(foodItemRepository);
 
             provider.updateUserId(authProvider.userId);
 
@@ -121,14 +127,11 @@ Future<void> main() async {
           },
         ),
 
-        ChangeNotifierProxyProvider<AuthProvider, ShoppingItemProvider>(
-          create: (_) {
-            return ShoppingItemProvider(shoppingItemRepository);
-          },
-          update: (_, authProvider, shoppingItemProvider) {
+        ChangeNotifierProxyProvider<AuthProvider, FoodItemProvider>(
+          create: (_) => FoodItemProvider(foodItemRepository),
+          update: (_, authProvider, foodItemProvider) {
             final provider =
-                shoppingItemProvider ??
-                ShoppingItemProvider(shoppingItemRepository);
+                foodItemProvider ?? FoodItemProvider(foodItemRepository);
 
             provider.updateUserId(authProvider.userId);
 
