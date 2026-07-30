@@ -25,11 +25,16 @@ import 'repositories/food_item_repository.dart';
 import 'repositories/settings_repository.dart';
 import 'repositories/shopping_item_repository.dart';
 import 'repositories/storage_location_repository.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  if (kIsWeb) {
+  await firebase_auth.FirebaseAuth.instance.setPersistence(firebase_auth.Persistence.NONE);
+  }
 
   await Hive.initFlutter();
 
