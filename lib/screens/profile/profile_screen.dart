@@ -132,6 +132,36 @@ class ProfileScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
+          Text('Insights', style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 10),
+          Card(
+            child: Column(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.history_outlined),
+                  title: const Text('Food Activity'),
+                  subtitle: const Text(
+                    "View what's been consumed, wasted, or expired",
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    Navigator.of(context).pushNamed(AppRoutes.foodActivity);
+                  },
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.bar_chart_outlined),
+                  title: const Text('Analytics'),
+                  subtitle: const Text('Waste trends and consumption summary'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    Navigator.of(context).pushNamed(AppRoutes.analytics);
+                  },
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
           Text('Application', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 10),
           Card(

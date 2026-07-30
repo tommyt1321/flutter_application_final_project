@@ -6,4 +6,6 @@ class HiveBoxes {
   static const String appSettings = 'app_settings';
   static const String foodItems = 'food_items';
   static const String shoppingItems = 'shopping_items';
+  static const String foodActivities = 'food_activities';
+  static const String analyticsSummaries = 'analytics_summaries';
 }

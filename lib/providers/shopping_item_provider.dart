@@ -213,6 +213,51 @@ class ShoppingItemProvider extends ChangeNotifier {
     }
   }
 
+  /// Marks a shopping item as converted into a pantry FoodItem. Called by
+  /// ConvertToPantryDialog after the FoodItem has already been created
+  /// successfully, so the shopping list stops offering "Add to pantry"
+  /// for this item again.
+  Future<bool> markConverted(
+    String itemId, {
+    required String foodItemId,
+  }) async {
+    final userId = _userId;
+
+    if (userId == null) {
+      _errorMessage = 'Please sign in before updating a shopping item.';
+      notifyListeners();
+      return false;
+    }
+
+    _startSubmitting();
+
+    try {
+      await _repository.markConverted(
+        itemId,
+        userId: userId,
+        foodItemId: foodItemId,
+      );
+
+      if (_userId == userId) {
+        _loadItems(userId);
+      }
+
+      return true;
+    } catch (error, stackTrace) {
+      debugPrint(
+        'Shopping item conversion error: '
+        '${error.runtimeType} - $error',
+      );
+
+      debugPrintStack(stackTrace: stackTrace);
+
+      _errorMessage = _getReadableError(error);
+      return false;
+    } finally {
+      _finishSubmitting();
+    }
+  }
+
   Future<bool> toggleCompleted(String itemId) async {
     final userId = _userId;
 

@@ -124,6 +124,40 @@ class ShoppingItemRepository {
     await _box.put(itemId, updatedItem);
   }
 
+  /// Marks a purchased item as converted into a pantry FoodItem, storing
+  /// the resulting FoodItem's id for reference. Called after a successful
+  /// FoodItemProvider.addItem(...) call during the conversion flow.
+  Future<void> markConverted(
+    String itemId, {
+    required String userId,
+    required String foodItemId,
+  }) async {
+    final existingItem = _box.get(itemId);
+
+    if (existingItem == null) {
+      throw StateError('The selected shopping item does not exist.');
+    }
+
+    if (existingItem.ownerUserId != userId) {
+      throw StateError(
+        'You do not have permission to update this shopping item.',
+      );
+    }
+
+    if (existingItem.isConverted) {
+      throw StateError('This item has already been added to your pantry.');
+    }
+
+    final updatedItem = existingItem.copyWith(
+      isCompleted: true,
+      isConverted: true,
+      convertedFoodItemId: foodItemId,
+      updatedAt: DateTime.now(),
+    );
+
+    await _box.put(itemId, updatedItem);
+  }
+
   Future<void> deleteItem(String itemId, {required String userId}) async {
     final item = _box.get(itemId);
 

@@ -8,4 +8,6 @@ class AppRoutes {
   static const String appearance = '/appearance';
   static const String authGate = '/auth';
   static const String register = '/register';
+  static const String foodActivity = '/food-activity';
+  static const String analytics = '/analytics';
 }

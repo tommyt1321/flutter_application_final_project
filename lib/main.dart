@@ -8,19 +8,25 @@ import 'app.dart';
 import 'core/constants/hive_boxes.dart';
 import 'firebase_options.dart';
 import 'hive_registrar.g.dart';
+import 'models/analytics_summary.dart';
 import 'models/app_settings.dart';
+import 'models/food_activity.dart';
 import 'models/food_category.dart';
 import 'models/food_item.dart';
 import 'models/shopping_item.dart';
 import 'models/storage_location.dart';
+import 'providers/analytics_provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/category_provider.dart';
+import 'providers/food_activity_provider.dart';
 import 'providers/food_item_provider.dart';
 import 'providers/settings_provider.dart';
 import 'providers/shopping_item_provider.dart';
 import 'providers/storage_location_provider.dart';
+import 'repositories/analytics_repository.dart';
 import 'repositories/auth_repository.dart';
 import 'repositories/category_repository.dart';
+import 'repositories/food_activity_repository.dart';
 import 'repositories/food_item_repository.dart';
 import 'repositories/settings_repository.dart';
 import 'repositories/shopping_item_repository.dart';
@@ -53,6 +59,14 @@ Future<void> main() async {
     HiveBoxes.shoppingItems,
   );
 
+  final foodActivityBox = await Hive.openBox<FoodActivity>(
+    HiveBoxes.foodActivities,
+  );
+
+  final analyticsSummaryBox = await Hive.openBox<AnalyticsSummary>(
+    HiveBoxes.analyticsSummaries,
+  );
+
   final categoryRepository = CategoryRepository(categoryBox);
 
   final storageLocationRepository = StorageLocationRepository(
@@ -64,6 +78,10 @@ Future<void> main() async {
   final foodItemRepository = FoodItemRepository(foodItemBox);
 
   final shoppingItemRepository = ShoppingItemRepository(shoppingItemBox);
+
+  final foodActivityRepository = FoodActivityRepository(foodActivityBox);
+
+  final analyticsRepository = AnalyticsRepository(analyticsSummaryBox);
 
   final settingsProvider = SettingsProvider(settingsRepository);
 
@@ -129,6 +147,36 @@ Future<void> main() async {
             final provider =
                 shoppingItemProvider ??
                 ShoppingItemProvider(shoppingItemRepository);
+
+            provider.updateUserId(authProvider.userId);
+
+            return provider;
+          },
+        ),
+
+        ChangeNotifierProxyProvider<AuthProvider, FoodActivityProvider>(
+          create: (_) {
+            return FoodActivityProvider(foodActivityRepository);
+          },
+          update: (_, authProvider, foodActivityProvider) {
+            final provider =
+                foodActivityProvider ??
+                FoodActivityProvider(foodActivityRepository);
+
+            provider.updateUserId(authProvider.userId);
+
+            return provider;
+          },
+        ),
+
+        ChangeNotifierProxyProvider<AuthProvider, AnalyticsProvider>(
+          create: (_) {
+            return AnalyticsProvider(analyticsRepository, foodActivityRepository);
+          },
+          update: (_, authProvider, analyticsProvider) {
+            final provider =
+                analyticsProvider ??
+                AnalyticsProvider(analyticsRepository, foodActivityRepository);
 
             provider.updateUserId(authProvider.userId);
 
