@@ -158,6 +158,27 @@ void main() {
     );
   });
 
+  test('migrates legacy food items to the signed-in user', () async {
+    final legacyItem = createItem(
+      id: 'legacy_item',
+      ownerUserId: '',
+      name: 'Legacy Milk',
+    );
+
+    await foodItemBox.put(legacyItem.id, legacyItem);
+
+    await repository.migrateLegacyItems(userOne);
+
+    final migratedItem = repository.getItemById(
+      id: legacyItem.id,
+      userId: userOne,
+    );
+
+    expect(migratedItem, isNotNull);
+    expect(migratedItem?.ownerUserId, userOne);
+    expect(repository.getItemsForUser(userTwo), isEmpty);
+  });
+
   test('sorts items by the nearest expiry date', () async {
     final now = DateTime.now();
 

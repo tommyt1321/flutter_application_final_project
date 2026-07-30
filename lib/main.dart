@@ -114,20 +114,6 @@ Future<void> main() async {
         ),
 
         ChangeNotifierProxyProvider<AuthProvider, FoodItemProvider>(
-          create: (_) {
-            return FoodItemProvider(foodItemRepository);
-          },
-          update: (_, authProvider, previousProvider) {
-            final provider =
-                previousProvider ?? FoodItemProvider(foodItemRepository);
-
-            provider.updateUserId(authProvider.userId);
-
-            return provider;
-          },
-        ),
-
-        ChangeNotifierProxyProvider<AuthProvider, FoodItemProvider>(
           create: (_) => FoodItemProvider(foodItemRepository),
           update: (_, authProvider, foodItemProvider) {
             final provider =

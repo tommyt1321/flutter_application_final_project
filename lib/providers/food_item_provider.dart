@@ -102,6 +102,7 @@ class FoodItemProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
+      await _repository.migrateLegacyItems(userId);
       _loadItems(userId);
     } catch (error) {
       if (_userId == userId) {
