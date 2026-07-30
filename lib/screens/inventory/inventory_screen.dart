@@ -9,9 +9,26 @@ import '../../providers/shopping_item_provider.dart';
 import '../../providers/storage_location_provider.dart';
 import 'food_item_form_screen.dart';
 
-class InventoryScreen extends StatelessWidget {
+enum _SearchField { name, category, location }
+
+enum _FilterOption { all, available, expiring, expired, lowStock, consumed, donated, discarded }
+
+enum _SortField { expiryDate, name, dateAdded, quantity, category }
+
+class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key});
   static const double _lowStockThreshold = 2;
+
+  @override
+  State<InventoryScreen> createState() => _InventoryScreenState();
+}
+
+class _InventoryScreenState extends State<InventoryScreen> {
+  String _searchQuery = '';
+  _SearchField _searchField = _SearchField.name;
+  _FilterOption _filter = _FilterOption.all;
+  _SortField _sortField = _SortField.expiryDate;
+  bool _ascending = true;
 
   @override
   Widget build(BuildContext context) {
@@ -88,6 +105,105 @@ class InventoryScreen extends StatelessWidget {
 
     final items = foodItemProvider.items;
 
+    // Apply search
+    final query = _searchQuery.trim().toLowerCase();
+
+    List<FoodItem> displayed = items.where((item) {
+      if (query.isNotEmpty) {
+        final nameMatch = item.name.toLowerCase().contains(query);
+
+        final categoryName = categoryProvider.getCategoryById(item.categoryId)?.name?.toLowerCase() ?? '';
+
+        final locationName = storageLocationProvider.getLocationById(item.storageLocationId)?.name?.toLowerCase() ?? '';
+
+        final matches = _searchField == _SearchField.name
+            ? nameMatch
+            : _searchField == _SearchField.category
+                ? categoryName.contains(query)
+                : locationName.contains(query);
+
+        if (!matches) return false;
+      }
+
+      // Filter
+      final isLowStock = item.quantity <= InventoryScreen._lowStockThreshold;
+      final status = item.statusEnum;
+      final hasConsumed = status == FoodItemStatus.consumed;
+      final hasDonated = status == FoodItemStatus.donated;
+      final hasDiscarded = status == FoodItemStatus.discarded;
+
+      switch (_filter) {
+        case _FilterOption.all:
+          break;
+
+        case _FilterOption.available:
+          if (isLowStock || hasConsumed || hasDonated || hasDiscarded) return false;
+          break;
+
+        case _FilterOption.expiring:
+          if (!foodItemProvider.expiringSoonItems.any((i) => i.id == item.id)) return false;
+          break;
+
+        case _FilterOption.expired:
+          if (!foodItemProvider.expiredItems.any((i) => i.id == item.id)) return false;
+          break;
+
+        case _FilterOption.lowStock:
+          if (!isLowStock) return false;
+          break;
+
+        case _FilterOption.consumed:
+          if (!hasConsumed) return false;
+          break;
+
+        case _FilterOption.donated:
+          if (!hasDonated) return false;
+          break;
+
+        case _FilterOption.discarded:
+          if (!hasDiscarded) return false;
+          break;
+      }
+
+      return true;
+    }).toList();
+
+    // Sort
+    displayed.sort((a, b) {
+      int cmp = 0;
+
+      switch (_sortField) {
+        case _SortField.expiryDate:
+          final ae = a.expiryDate;
+          final be = b.expiryDate;
+          if (ae == null && be == null) cmp = 0;
+          else if (ae == null) cmp = 1;
+          else if (be == null) cmp = -1;
+          else cmp = ae.compareTo(be);
+          break;
+
+        case _SortField.name:
+          cmp = a.name.toLowerCase().compareTo(b.name.toLowerCase());
+          break;
+
+        case _SortField.dateAdded:
+          cmp = a.createdAt.compareTo(b.createdAt);
+          break;
+
+        case _SortField.quantity:
+          cmp = a.quantity.compareTo(b.quantity);
+          break;
+
+        case _SortField.category:
+          final an = categoryProvider.getCategoryById(a.categoryId)?.name?.toLowerCase() ?? '';
+          final bn = categoryProvider.getCategoryById(b.categoryId)?.name?.toLowerCase() ?? '';
+          cmp = an.compareTo(bn);
+          break;
+      }
+
+      return _ascending ? cmp : -cmp;
+    });
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -102,11 +218,90 @@ class InventoryScreen extends StatelessWidget {
         const SizedBox(height: 20),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text(
-            'Your Items',
-            style: Theme.of(
-              context,
-            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+          child: Row(
+            children: [
+              Expanded(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Your Items',
+                      style: Theme.of(
+                        context,
+                      ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: SizedBox(
+                        height: 48,
+                        child: TextFormField(
+                          decoration: InputDecoration(
+                            hintText: 'Search inventory',
+                            prefixIcon: const Icon(Icons.search),
+                            isDense: true,
+                            filled: true,
+                            fillColor: Theme.of(context).colorScheme.surfaceVariant,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(24),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                          onChanged: (v) => setState(() => _searchQuery = v),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Filter Dropdown
+              SizedBox(
+                width: 160,
+                child: DropdownButtonFormField<_FilterOption>(
+                  value: _filter,
+                  decoration: const InputDecoration(contentPadding: EdgeInsets.symmetric(horizontal: 12), border: OutlineInputBorder()),
+                  items: _FilterOption.values
+                      .map((f) => DropdownMenuItem(value: f, child: Text(_filterLabel(f))))
+                      .toList(),
+                  onChanged: (v) {
+                    if (v == null) return;
+                    setState(() => _filter = v);
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Sort Dropdown + Asc/Desc button
+              SizedBox(
+                width: 220,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<_SortField>(
+                        value: _sortField,
+                        decoration: const InputDecoration(contentPadding: EdgeInsets.symmetric(horizontal: 12), border: OutlineInputBorder()),
+                        items: _SortField.values
+                            .map((s) => DropdownMenuItem(value: s, child: Text(_sortLabel(s))))
+                            .toList(),
+                        onChanged: (v) {
+                          if (v == null) return;
+                          setState(() => _sortField = v);
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Material(
+                      type: MaterialType.button,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                      color: Theme.of(context).colorScheme.primaryContainer,
+                      child: IconButton(
+                        icon: Icon(_ascending ? Icons.arrow_upward : Icons.arrow_downward, size: 18, color: Theme.of(context).colorScheme.onPrimaryContainer),
+                        onPressed: () => setState(() => _ascending = !_ascending),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 12),
@@ -118,12 +313,12 @@ class InventoryScreen extends StatelessWidget {
             child: ListView.separated(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
-              itemCount: items.length,
+              itemCount: displayed.length,
               separatorBuilder: (_, _) {
                 return const SizedBox(height: 10);
               },
               itemBuilder: (context, index) {
-                final item = items[index];
+                final item = displayed[index];
 
                 final categoryName =
                     categoryProvider.getCategoryById(item.categoryId)?.name ??
@@ -135,7 +330,7 @@ class InventoryScreen extends StatelessWidget {
                         ?.name ??
                     'Unknown location';
 
-                final isLowStock = item.quantity <= _lowStockThreshold;
+                final isLowStock = item.quantity <= InventoryScreen._lowStockThreshold;
 
                 final isInShoppingList =
                     shoppingItemProvider?.containsItemNamed(item.name) ?? false;
@@ -155,6 +350,9 @@ class InventoryScreen extends StatelessWidget {
                   onDelete: () {
                     _deleteFoodItem(context, item);
                   },
+                  onConsume: () => _handleConsume(context, item),
+                  onDonate: () => _handleDonateOrDiscard(context, item, 'donated'),
+                  onDiscard: () => _handleDonateOrDiscard(context, item, 'discarded'),
                 );
               },
             ),
@@ -172,6 +370,139 @@ class InventoryScreen extends StatelessWidget {
         },
       ),
     );
+  }
+
+  Future<void> _handleConsume(BuildContext context, FoodItem item) async {
+    final controller = TextEditingController();
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text('Consume ${item.name}'),
+          content: TextField(
+            controller: controller,
+            keyboardType: TextInputType.numberWithOptions(decimal: true),
+            decoration: InputDecoration(hintText: 'Amount (${item.unit})'),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: const Text('Cancel')),
+            FilledButton(onPressed: () => Navigator.of(dialogContext).pop(true), child: const Text('Consume')),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true) return;
+
+    final entered = double.tryParse(controller.text) ?? 0.0;
+    if (entered <= 0) {
+      _showMessage(context, 'Enter a valid amount to consume.');
+      return;
+    }
+
+    final newQuantity = (item.quantity - entered).clamp(0.0, double.infinity);
+
+    final notes = (item.notes ?? '').trim();
+    final status = newQuantity <= 0 ? FoodItemStatus.consumed.name : item.status;
+
+    final provider = context.read<FoodItemProvider>();
+
+    final success = await provider.updateItem(
+      item: item.copyWith(status: status),
+      name: item.name,
+      quantity: newQuantity,
+      unit: item.unit,
+      categoryId: item.categoryId,
+      storageLocationId: item.storageLocationId,
+      expiryDate: item.expiryDate,
+      removeExpiryDate: false,
+      notes: item.notes,
+    );
+
+    if (!context.mounted) return;
+
+    if (success) {
+      _showMessage(context, 'Consumed ${entered.toString()} ${item.unit} of ${item.name}.');
+    } else {
+      _showMessage(context, provider.errorMessage ?? 'Unable to update item.');
+    }
+  }
+
+  Future<void> _handleDonateOrDiscard(BuildContext context, FoodItem item, String tag) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text('${tag[0].toUpperCase()}${tag.substring(1)} ${item.name}?'),
+          content: Text('This will set the quantity to zero and mark the item as $tag.'),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: const Text('Cancel')),
+            FilledButton(onPressed: () => Navigator.of(dialogContext).pop(true), child: Text(tag[0].toUpperCase() + tag.substring(1))),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true) return;
+
+    final provider = context.read<FoodItemProvider>();
+
+    final success = await provider.updateItem(
+      item: item.copyWith(quantity: 0, status: tag.toLowerCase()),
+      name: item.name,
+      quantity: 0,
+      unit: item.unit,
+      categoryId: item.categoryId,
+      storageLocationId: item.storageLocationId,
+      expiryDate: item.expiryDate,
+      removeExpiryDate: false,
+      notes: item.notes,
+    );
+
+    if (!context.mounted) return;
+
+    if (success) {
+      _showMessage(context, '${item.name} marked as $tag.');
+    } else {
+      _showMessage(context, provider.errorMessage ?? 'Unable to update item.');
+    }
+  }
+
+  String _filterLabel(_FilterOption f) {
+    switch (f) {
+      case _FilterOption.all:
+        return 'All';
+      case _FilterOption.available:
+        return 'Available';
+      case _FilterOption.expiring:
+        return 'Expiring';
+      case _FilterOption.expired:
+        return 'Expired';
+      case _FilterOption.lowStock:
+        return 'Low stock';
+      case _FilterOption.consumed:
+        return 'Consumed';
+      case _FilterOption.donated:
+        return 'Donated';
+      case _FilterOption.discarded:
+        return 'Discarded';
+    }
+  }
+
+  String _sortLabel(_SortField s) {
+    switch (s) {
+      case _SortField.expiryDate:
+        return 'Expiry date';
+      case _SortField.name:
+        return 'Food name';
+      case _SortField.dateAdded:
+        return 'Date added';
+      case _SortField.quantity:
+        return 'Quantity';
+      case _SortField.category:
+        return 'Category';
+    }
   }
 
   Future<void> _addToShoppingList(BuildContext context, FoodItem item) async {
@@ -362,6 +693,9 @@ class _FoodItemCard extends StatelessWidget {
     required this.onEdit,
     required this.onAddToShoppingList,
     required this.onDelete,
+    required this.onConsume,
+    required this.onDonate,
+    required this.onDiscard,
   });
 
   final FoodItem item;
@@ -372,12 +706,27 @@ class _FoodItemCard extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onAddToShoppingList;
   final VoidCallback onDelete;
+  final VoidCallback onConsume;
+  final VoidCallback onDonate;
+  final VoidCallback onDiscard;
 
   @override
   Widget build(BuildContext context) {
     final expiryPresentation = _getExpiryPresentation(context, item.expiryDate);
 
     final colorScheme = Theme.of(context).colorScheme;
+    final status = item.statusEnum;
+    final hasConsumed = status == FoodItemStatus.consumed;
+    final hasDonated = status == FoodItemStatus.donated;
+    final hasDiscarded = status == FoodItemStatus.discarded;
+    final statusPresentation = _getStatusPresentation(
+      context,
+      isLowStock: isLowStock,
+      hasConsumed: hasConsumed,
+      hasDonated: hasDonated,
+      hasDiscarded: hasDiscarded,
+      isInShoppingList: isInShoppingList,
+    );
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -407,7 +756,7 @@ class _FoodItemCard extends StatelessWidget {
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
 
-                    if (isLowStock) ...[
+                    if (isLowStock || hasConsumed || hasDonated || hasDiscarded) ...[
                       const SizedBox(height: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(
@@ -415,27 +764,23 @@ class _FoodItemCard extends StatelessWidget {
                           vertical: 5,
                         ),
                         decoration: BoxDecoration(
-                          color: colorScheme.errorContainer,
+                          color: statusPresentation.backgroundColor,
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
-                              isInShoppingList
-                                  ? Icons.shopping_cart_checkout_rounded
-                                  : Icons.remove_shopping_cart_outlined,
+                              statusPresentation.icon,
                               size: 15,
-                              color: colorScheme.onErrorContainer,
+                              color: statusPresentation.textColor,
                             ),
                             const SizedBox(width: 5),
                             Text(
-                              isInShoppingList
-                                  ? 'Low stock • In shopping list'
-                                  : 'Low stock',
+                              statusPresentation.label,
                               style: Theme.of(context).textTheme.labelSmall
                                   ?.copyWith(
-                                    color: colorScheme.onErrorContainer,
+                                    color: statusPresentation.textColor,
                                     fontWeight: FontWeight.w600,
                                   ),
                             ),
@@ -465,6 +810,27 @@ class _FoodItemCard extends StatelessWidget {
                   ],
                 ),
               ),
+              if (!hasConsumed && !hasDonated && !hasDiscarded)
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      tooltip: 'Consume',
+                      icon: const Icon(Icons.local_drink_outlined),
+                      onPressed: onConsume,
+                    ),
+                    IconButton(
+                      tooltip: 'Donate',
+                      icon: const Icon(Icons.card_giftcard_outlined),
+                      onPressed: onDonate,
+                    ),
+                    IconButton(
+                      tooltip: 'Discard',
+                      icon: const Icon(Icons.delete_forever_outlined),
+                      onPressed: onDiscard,
+                    ),
+                  ],
+                ),
               PopupMenuButton<String>(
                 tooltip: 'Food item actions',
                 onSelected: (action) {
@@ -596,6 +962,65 @@ class _FoodItemCard extends StatelessWidget {
       color: colorScheme.onSurfaceVariant,
     );
   }
+}
+
+_StatusPresentation _getStatusPresentation(
+  BuildContext context, {
+  required bool isLowStock,
+  required bool hasConsumed,
+  required bool hasDonated,
+  required bool hasDiscarded,
+  required bool isInShoppingList,
+}) {
+  if (hasConsumed) {
+    return _StatusPresentation(
+      label: 'Consumed',
+      icon: Icons.check_circle_outline,
+      backgroundColor: Colors.green.shade100,
+      textColor: Colors.green.shade900,
+    );
+  }
+
+  if (hasDonated) {
+    return _StatusPresentation(
+      label: 'Donated',
+      icon: Icons.card_giftcard_outlined,
+      backgroundColor: Colors.amber.shade100,
+      textColor: Colors.amber.shade900,
+    );
+  }
+
+  if (hasDiscarded) {
+    return _StatusPresentation(
+      label: 'Discarded',
+      icon: Icons.delete_forever_outlined,
+      backgroundColor: Theme.of(context).colorScheme.errorContainer,
+      textColor: Theme.of(context).colorScheme.onErrorContainer,
+    );
+  }
+
+  return _StatusPresentation(
+    label: isInShoppingList ? 'Low stock • In shopping list' : 'Low stock',
+    icon: isInShoppingList
+        ? Icons.shopping_cart_checkout_rounded
+        : Icons.remove_shopping_cart_outlined,
+    backgroundColor: Theme.of(context).colorScheme.errorContainer,
+    textColor: Theme.of(context).colorScheme.onErrorContainer,
+  );
+}
+
+class _StatusPresentation {
+  const _StatusPresentation({
+    required this.label,
+    required this.icon,
+    required this.backgroundColor,
+    required this.textColor,
+  });
+
+  final String label;
+  final IconData icon;
+  final Color backgroundColor;
+  final Color textColor;
 }
 
 class _InformationLine extends StatelessWidget {

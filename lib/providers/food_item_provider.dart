@@ -177,6 +177,7 @@ class FoodItemProvider extends ChangeNotifier {
         storageLocationId: storageLocationId,
         expiryDate: expiryDate,
         notes: notes,
+        status: FoodItemStatus.available.name,
         createdAt: now,
         updatedAt: now,
       );
