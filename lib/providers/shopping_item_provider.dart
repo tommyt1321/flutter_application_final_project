@@ -316,7 +316,7 @@ class ShoppingItemProvider extends ChangeNotifier {
     final userId = _userId;
 
     if (userId == null) {
-      _errorMessage = 'Please sign in before clearing completed items.';
+      _errorMessage = 'Please sign in before clearing purchased items.';
       notifyListeners();
       return false;
     }

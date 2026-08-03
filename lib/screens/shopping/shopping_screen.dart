@@ -27,7 +27,7 @@ class ShoppingScreen extends StatelessWidget {
         actions: [
           if (provider.completedCount > 0)
             IconButton(
-              tooltip: 'Clear completed items',
+              tooltip: 'Clear purchased items',
               onPressed: provider.isSubmitting
                   ? null
                   : () {
@@ -250,10 +250,10 @@ class ShoppingScreen extends StatelessWidget {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Clear completed items?'),
+          title: const Text('Clear purchased items?'),
           content: Text(
             'This will remove '
-            '${provider.completedCount} completed '
+            '${provider.completedCount} purchased '
             'shopping item(s).',
           ),
           actions: [
@@ -287,8 +287,8 @@ class ShoppingScreen extends StatelessWidget {
     _showMessage(
       context,
       success
-          ? 'Completed shopping items were cleared.'
-          : provider.errorMessage ?? 'Unable to clear completed items.',
+          ? 'Purchased shopping items were cleared.'
+          : provider.errorMessage ?? 'Unable to clear purchased items.',
     );
   }
 
@@ -330,7 +330,7 @@ class _ShoppingSummary extends StatelessWidget {
               child: _SummaryValue(
                 icon: Icons.check_circle_outline,
                 value: completedCount,
-                label: 'Completed',
+                label: 'Purchased',
                 color: colorScheme.tertiary,
               ),
             ),
@@ -520,7 +520,7 @@ class _EmptyShoppingState extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             'Add items you need to buy and mark '
-            'them as completed while shopping.',
+            'them as purchased while shopping.',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,

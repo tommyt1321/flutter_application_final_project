@@ -13,7 +13,7 @@ class ShoppingItemRepository {
     }).toList();
 
     items.sort((first, second) {
-      // Uncompleted items appear first.
+      // Unpurchased items appear first.
       if (first.isCompleted != second.isCompleted) {
         return first.isCompleted ? 1 : -1;
       }
