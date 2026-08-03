@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../screens/analytics/analytics_screen.dart';
 import '../../screens/auth/auth_gate.dart';
 import '../../screens/auth/registry_screen.dart';
+import '../../screens/food_activity/food_activity_screen.dart';
 import '../../screens/storage/manage_storage_locations_screen.dart';
 import '../../screens/categories/manage_categories_screen.dart';
 import '../../screens/navigation/main_navigation_screen.dart';
@@ -51,6 +53,18 @@ class RouteGenerator {
       case AppRoutes.appearance:
         return MaterialPageRoute<void>(
           builder: (_) => const AppearanceScreen(),
+          settings: settings,
+        );
+
+      case AppRoutes.foodActivity:
+        return MaterialPageRoute<void>(
+          builder: (_) => const FoodActivityScreen(),
+          settings: settings,
+        );
+
+      case AppRoutes.analytics:
+        return MaterialPageRoute<void>(
+          builder: (_) => const AnalyticsScreen(),
           settings: settings,
         );
 
