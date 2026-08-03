@@ -17,6 +17,8 @@ bool shouldIncludeItemForFilter({
   required FoodItem item,
   required FilterOption filter,
   required bool isExpired,
+  required bool isExpiringSoon,
+  required bool isLowStock,
   required bool hasConsumed,
   required bool hasDonated,
   required bool hasDiscarded,
@@ -29,22 +31,22 @@ bool shouldIncludeItemForFilter({
       return item.quantity > 0 && !isExpired && !hasConsumed && !hasDonated && !hasDiscarded;
 
     case FilterOption.expiring:
-      return false;
+      return isExpiringSoon;
 
     case FilterOption.expired:
-      return false;
+      return isExpired;
 
     case FilterOption.lowStock:
-      return false;
+      return isLowStock;
 
     case FilterOption.consumed:
-      return false;
+      return hasConsumed;
 
     case FilterOption.donated:
-      return false;
+      return hasDonated;
 
     case FilterOption.discarded:
-      return false;
+      return hasDiscarded;
   }
 }
 
@@ -164,51 +166,18 @@ class _InventoryScreenState extends State<InventoryScreen> {
       final hasDiscarded = status == FoodItemStatus.discarded;
 
       final isExpired = foodItemProvider.expiredItems.any((i) => i.id == item.id);
+      final isExpiringSoon = foodItemProvider.expiringSoonItems.any((i) => i.id == item.id);
 
-      if (!shouldIncludeItemForFilter(
+      return shouldIncludeItemForFilter(
         item: item,
         filter: _filter,
         isExpired: isExpired,
+        isExpiringSoon: isExpiringSoon,
+        isLowStock: isLowStock,
         hasConsumed: hasConsumed,
         hasDonated: hasDonated,
         hasDiscarded: hasDiscarded,
-      )) {
-        return false;
-      }
-
-      switch (_filter) {
-        case FilterOption.all:
-          break;
-
-        case FilterOption.available:
-          break;
-
-        case FilterOption.expiring:
-          if (!foodItemProvider.expiringSoonItems.any((i) => i.id == item.id)) return false;
-          break;
-
-        case FilterOption.expired:
-          if (!isExpired) return false;
-          break;
-
-        case FilterOption.lowStock:
-          if (!isLowStock) return false;
-          break;
-
-        case FilterOption.consumed:
-          if (!hasConsumed) return false;
-          break;
-
-        case FilterOption.donated:
-          if (!hasDonated) return false;
-          break;
-
-        case FilterOption.discarded:
-          if (!hasDiscarded) return false;
-          break;
-      }
-
-      return true;
+      );
     }).toList();
 
     // Sort
@@ -570,7 +539,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
     final newQuantity = (item.quantity - entered).clamp(0.0, double.infinity);
 
-    final notes = (item.notes ?? '').trim();
     final status = newQuantity <= 0 ? FoodItemStatus.consumed.name : item.status;
 
     final provider = context.read<FoodItemProvider>();
