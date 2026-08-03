@@ -1,59 +1,56 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'shopping_item.dart';
+part of 'food_activity.dart';
 
 // **************************************************************************
 // TypeAdapterGenerator
 // **************************************************************************
 
-class ShoppingItemAdapter extends TypeAdapter<ShoppingItem> {
+class FoodActivityAdapter extends TypeAdapter<FoodActivity> {
   @override
-  final typeId = 4;
+  final typeId = 30;
 
   @override
-  ShoppingItem read(BinaryReader reader) {
+  FoodActivity read(BinaryReader reader) {
     final numOfFields = reader.readByte();
     final fields = <int, dynamic>{
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
-    return ShoppingItem(
+    return FoodActivity(
       id: fields[0] as String,
       ownerUserId: fields[1] as String,
-      name: fields[2] as String,
-      quantity: (fields[3] as num).toDouble(),
-      unit: fields[4] as String,
-      isCompleted: fields[5] as bool,
-      createdAt: fields[6] as DateTime,
-      updatedAt: fields[7] as DateTime,
-      isConverted: fields[8] == null ? false : fields[8] as bool,
-      convertedFoodItemId: fields[9] as String?,
+      foodItemId: fields[2] as String,
+      foodItemName: fields[3] as String,
+      activityTypeIndex: (fields[4] as num).toInt(),
+      quantity: (fields[5] as num).toDouble(),
+      unit: fields[6] as String,
+      timestamp: fields[7] as DateTime,
+      notes: fields[8] as String?,
     );
   }
 
   @override
-  void write(BinaryWriter writer, ShoppingItem obj) {
+  void write(BinaryWriter writer, FoodActivity obj) {
     writer
-      ..writeByte(10)
+      ..writeByte(9)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
       ..write(obj.ownerUserId)
       ..writeByte(2)
-      ..write(obj.name)
+      ..write(obj.foodItemId)
       ..writeByte(3)
-      ..write(obj.quantity)
+      ..write(obj.foodItemName)
       ..writeByte(4)
-      ..write(obj.unit)
+      ..write(obj.activityTypeIndex)
       ..writeByte(5)
-      ..write(obj.isCompleted)
+      ..write(obj.quantity)
       ..writeByte(6)
-      ..write(obj.createdAt)
+      ..write(obj.unit)
       ..writeByte(7)
-      ..write(obj.updatedAt)
+      ..write(obj.timestamp)
       ..writeByte(8)
-      ..write(obj.isConverted)
-      ..writeByte(9)
-      ..write(obj.convertedFoodItemId);
+      ..write(obj.notes);
   }
 
   @override
@@ -62,7 +59,7 @@ class ShoppingItemAdapter extends TypeAdapter<ShoppingItem> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is ShoppingItemAdapter &&
+      other is FoodActivityAdapter &&
           runtimeType == other.runtimeType &&
           typeId == other.typeId;
 }

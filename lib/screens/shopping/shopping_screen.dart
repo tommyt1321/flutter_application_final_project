@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../models/shopping_item.dart';
 import '../../providers/shopping_item_provider.dart';
+import 'convert_to_pantry_dialog.dart';
 import 'shopping_item_form_dialog.dart';
 
 class ShoppingScreen extends StatelessWidget {
@@ -26,7 +27,7 @@ class ShoppingScreen extends StatelessWidget {
         actions: [
           if (provider.completedCount > 0)
             IconButton(
-              tooltip: 'Clear completed items',
+              tooltip: 'Clear purchased items',
               onPressed: provider.isSubmitting
                   ? null
                   : () {
@@ -124,6 +125,9 @@ class ShoppingScreen extends StatelessWidget {
                   onDelete: () {
                     _deleteItem(context, provider, item);
                   },
+                  onConvert: () {
+                    _openConvertDialog(context, item);
+                  },
                 );
               },
             ),
@@ -154,6 +158,23 @@ class ShoppingScreen extends StatelessWidget {
         : 'Shopping item updated.';
 
     _showMessage(context, message);
+  }
+
+  Future<void> _openConvertDialog(
+    BuildContext context,
+    ShoppingItem item,
+  ) async {
+    final converted = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => ConvertToPantryDialog(item: item),
+    );
+
+    if (converted != true || !context.mounted) {
+      return;
+    }
+
+    _showMessage(context, '${item.name} was added to your pantry.');
   }
 
   Future<void> _toggleCompleted(
@@ -229,10 +250,10 @@ class ShoppingScreen extends StatelessWidget {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Clear completed items?'),
+          title: const Text('Clear purchased items?'),
           content: Text(
             'This will remove '
-            '${provider.completedCount} completed '
+            '${provider.completedCount} purchased '
             'shopping item(s).',
           ),
           actions: [
@@ -266,8 +287,8 @@ class ShoppingScreen extends StatelessWidget {
     _showMessage(
       context,
       success
-          ? 'Completed shopping items were cleared.'
-          : provider.errorMessage ?? 'Unable to clear completed items.',
+          ? 'Purchased shopping items were cleared.'
+          : provider.errorMessage ?? 'Unable to clear purchased items.',
     );
   }
 
@@ -309,7 +330,7 @@ class _ShoppingSummary extends StatelessWidget {
               child: _SummaryValue(
                 icon: Icons.check_circle_outline,
                 value: completedCount,
-                label: 'Completed',
+                label: 'Purchased',
                 color: colorScheme.tertiary,
               ),
             ),
@@ -358,6 +379,7 @@ class _ShoppingItemCard extends StatelessWidget {
     required this.onToggle,
     required this.onEdit,
     required this.onDelete,
+    required this.onConvert,
   });
 
   final ShoppingItem item;
@@ -365,6 +387,7 @@ class _ShoppingItemCard extends StatelessWidget {
   final VoidCallback onToggle;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback onConvert;
 
   @override
   Widget build(BuildContext context) {
@@ -396,43 +419,60 @@ class _ShoppingItemCard extends StatelessWidget {
         ),
         subtitle: Text(
           '${_formatQuantity(item.quantity)} '
-          '${item.unit}',
+          '${item.unit}'
+          '${item.isConverted ? ' · Added to pantry' : ''}',
           style: TextStyle(decoration: textDecoration, color: textColor),
         ),
-        secondary: PopupMenuButton<String>(
-          tooltip: 'Shopping item actions',
-          enabled: !isDisabled,
-          onSelected: (action) {
-            switch (action) {
-              case 'edit':
-                onEdit();
-                break;
+        secondary: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (item.isCompleted && !item.isConverted)
+              IconButton(
+                tooltip: 'Add to pantry',
+                onPressed: isDisabled ? null : onConvert,
+                icon: const Icon(Icons.move_to_inbox_outlined),
+              )
+            else if (item.isConverted)
+              Icon(
+                Icons.check_circle_outline,
+                color: Theme.of(context).colorScheme.tertiary,
+              ),
+            PopupMenuButton<String>(
+              tooltip: 'Shopping item actions',
+              enabled: !isDisabled,
+              onSelected: (action) {
+                switch (action) {
+                  case 'edit':
+                    onEdit();
+                    break;
 
-              case 'delete':
-                onDelete();
-                break;
-            }
-          },
-          itemBuilder: (_) {
-            return const [
-              PopupMenuItem<String>(
-                value: 'edit',
-                child: ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: Icon(Icons.edit_outlined),
-                  title: Text('Edit'),
-                ),
-              ),
-              PopupMenuItem<String>(
-                value: 'delete',
-                child: ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: Icon(Icons.delete_outline),
-                  title: Text('Delete'),
-                ),
-              ),
-            ];
-          },
+                  case 'delete':
+                    onDelete();
+                    break;
+                }
+              },
+              itemBuilder: (_) {
+                return const [
+                  PopupMenuItem<String>(
+                    value: 'edit',
+                    child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(Icons.edit_outlined),
+                      title: Text('Edit'),
+                    ),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'delete',
+                    child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(Icons.delete_outline),
+                      title: Text('Delete'),
+                    ),
+                  ),
+                ];
+              },
+            ),
+          ],
         ),
       ),
     );
@@ -480,7 +520,7 @@ class _EmptyShoppingState extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             'Add items you need to buy and mark '
-            'them as completed while shopping.',
+            'them as purchased while shopping.',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,

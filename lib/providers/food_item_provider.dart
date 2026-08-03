@@ -152,6 +152,11 @@ class FoodItemProvider extends ChangeNotifier {
   }
 
   Future<bool> addItem({
+    // Optional: pass a pre-generated id when the caller needs to know the
+    // FoodItem's id before the add completes (e.g. shopping->pantry
+    // conversion logs a FoodActivity referencing this same id). Leave
+    // null for normal use — an id is auto-generated as before.
+    String? id,
     required String name,
     required double quantity,
     required String unit,
@@ -175,8 +180,9 @@ class FoodItemProvider extends ChangeNotifier {
 
       final item = FoodItem(
         id:
+            id ??
             'food_item_'
-            '${DateTime.now().microsecondsSinceEpoch}',
+                '${DateTime.now().microsecondsSinceEpoch}',
         ownerUserId: userId,
         name: name,
         quantity: quantity,
