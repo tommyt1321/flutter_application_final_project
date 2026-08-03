@@ -113,6 +113,7 @@ class AnalyticsProvider extends ChangeNotifier {
     double consumed = 0;
     double wasted = 0;
     double expired = 0;
+    double donated = 0;
     final wastedByItem = <String, double>{};
 
     for (final activity in activities) {
@@ -133,6 +134,9 @@ class AnalyticsProvider extends ChangeNotifier {
           break;
         case ActivityType.expired:
           expired += activity.quantity;
+          break;
+        case ActivityType.donated:
+          donated += activity.quantity;
           break;
       }
     }
@@ -160,6 +164,7 @@ class AnalyticsProvider extends ChangeNotifier {
       wastePercentage: wastePercentage,
       generatedAt: now,
       mostWastedItemName: mostWastedItemName,
+      totalDonated: donated,
     );
   }
 }

@@ -20,6 +20,7 @@ class AnalyticsSummary {
     required this.wastePercentage,
     required this.generatedAt,
     this.mostWastedItemName,
+    this.totalDonated = 0,
   });
 
   @HiveField(0)
@@ -59,6 +60,12 @@ class AnalyticsSummary {
   @HiveField(10)
   final String? mostWastedItemName;
 
+  /// Total quantity donated in this period. Added after the initial
+  /// build-out once ActivityType.donated was introduced; defaults to 0
+  /// so older cached summaries without this field still deserialize fine.
+  @HiveField(11)
+  final double totalDonated;
+
   AnalyticsSummary copyWith({
     String? id,
     String? ownerUserId,
@@ -72,6 +79,7 @@ class AnalyticsSummary {
     DateTime? generatedAt,
     String? mostWastedItemName,
     bool clearMostWastedItemName = false,
+    double? totalDonated,
   }) {
     return AnalyticsSummary(
       id: id ?? this.id,
@@ -87,6 +95,7 @@ class AnalyticsSummary {
       mostWastedItemName: clearMostWastedItemName
           ? null
           : (mostWastedItemName ?? this.mostWastedItemName),
+      totalDonated: totalDonated ?? this.totalDonated,
     );
   }
 }

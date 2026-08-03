@@ -122,6 +122,11 @@ class _LogFoodActivityDialogState extends State<LogFoodActivityDialog> {
                       label: Text('Expired'),
                       icon: Icon(Icons.warning_amber_outlined),
                     ),
+                    ButtonSegment(
+                      value: ActivityType.donated,
+                      label: Text('Donated'),
+                      icon: Icon(Icons.volunteer_activism_outlined),
+                    ),
                   ],
                   selected: {_selectedType},
                   onSelectionChanged: isSubmitting

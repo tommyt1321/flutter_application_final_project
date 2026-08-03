@@ -168,6 +168,7 @@ class FoodActivityScreen extends StatelessWidget {
     ActivityType.consumed => 'Consumed',
     ActivityType.wasted => 'Wasted',
     ActivityType.expired => 'Expired',
+    ActivityType.donated => 'Donated',
   };
 }
 
@@ -223,6 +224,7 @@ class _FoodActivityCard extends StatelessWidget {
       ActivityType.consumed => (Icons.restaurant_outlined, colorScheme.tertiary),
       ActivityType.wasted => (Icons.delete_outline, colorScheme.error),
       ActivityType.expired => (Icons.warning_amber_outlined, colorScheme.error),
+      ActivityType.donated => (Icons.volunteer_activism_outlined, colorScheme.secondary),
     };
   }
 

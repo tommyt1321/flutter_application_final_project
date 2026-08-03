@@ -4,7 +4,7 @@ part 'food_activity.g.dart';
 
 /// What happened to a pantry/food item. Stored as an int index rather than
 /// its own HiveType to avoid spending an extra typeId.
-enum ActivityType { added, consumed, wasted, expired }
+enum ActivityType { added, consumed, wasted, expired, donated }
 
 @HiveType(typeId: 30)
 class FoodActivity {
