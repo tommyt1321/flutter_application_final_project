@@ -33,6 +33,10 @@ class FoodItemProvider extends ChangeNotifier {
 
     return List<FoodItem>.unmodifiable(
       _items.where((item) {
+        if (item.statusEnum != FoodItemStatus.available) {
+          return false;
+        }
+
         final expiryDate = item.expiryDate;
 
         if (expiryDate == null) {
@@ -51,6 +55,10 @@ class FoodItemProvider extends ChangeNotifier {
 
     return List<FoodItem>.unmodifiable(
       _items.where((item) {
+        if (item.statusEnum != FoodItemStatus.available) {
+          return false;
+        }
+
         final expiryDate = item.expiryDate;
 
         if (expiryDate == null) {
@@ -223,6 +231,9 @@ class FoodItemProvider extends ChangeNotifier {
     _startSubmitting();
 
     try {
+      final nextStatusName = (item.status ?? FoodItemStatus.available.name).trim().toLowerCase();
+      final now = DateTime.now();
+
       final updatedItem = item.copyWith(
         name: name,
         quantity: quantity,
@@ -233,6 +244,16 @@ class FoodItemProvider extends ChangeNotifier {
         clearExpiryDate: removeExpiryDate,
         notes: notes,
         clearNotes: notes == null || notes.trim().isEmpty,
+        status: nextStatusName,
+        consumedAt: nextStatusName == FoodItemStatus.consumed.name
+            ? item.consumedAt ?? now
+            : null,
+        donatedAt: nextStatusName == FoodItemStatus.donated.name
+            ? item.donatedAt ?? now
+            : null,
+        discardedAt: nextStatusName == FoodItemStatus.discarded.name
+            ? item.discardedAt ?? now
+            : null,
       );
 
       await _repository.updateItem(updatedItem, userId: userId);

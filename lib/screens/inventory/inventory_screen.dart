@@ -9,8 +9,6 @@ import '../../providers/shopping_item_provider.dart';
 import '../../providers/storage_location_provider.dart';
 import 'food_item_form_screen.dart';
 
-enum _SearchField { name, category, location }
-
 enum _FilterOption { all, available, expiring, expired, lowStock, consumed, donated, discarded }
 
 enum _SortField { expiryDate, name, dateAdded, quantity, category }
@@ -25,7 +23,6 @@ class InventoryScreen extends StatefulWidget {
 
 class _InventoryScreenState extends State<InventoryScreen> {
   String _searchQuery = '';
-  _SearchField _searchField = _SearchField.name;
   _FilterOption _filter = _FilterOption.all;
   _SortField _sortField = _SortField.expiryDate;
   bool _ascending = true;
@@ -106,23 +103,22 @@ class _InventoryScreenState extends State<InventoryScreen> {
     final items = foodItemProvider.items;
 
     // Apply search
-    final query = _searchQuery.trim().toLowerCase();
+    final searchClauses = _parseSearchClauses(_searchQuery);
 
     List<FoodItem> displayed = items.where((item) {
-      if (query.isNotEmpty) {
-        final nameMatch = item.name.toLowerCase().contains(query);
+      if (searchClauses.isNotEmpty) {
+        final searchableValues = [
+          item.name.toLowerCase(),
+          categoryProvider.getCategoryById(item.categoryId)?.name?.toLowerCase() ?? '',
+          storageLocationProvider.getLocationById(item.storageLocationId)?.name?.toLowerCase() ?? '',
+        ];
 
-        final categoryName = categoryProvider.getCategoryById(item.categoryId)?.name?.toLowerCase() ?? '';
+        final matchesAllClauses = searchClauses.every((clause) {
+          final normalizedClause = clause.toLowerCase();
+          return searchableValues.any((value) => value.contains(normalizedClause));
+        });
 
-        final locationName = storageLocationProvider.getLocationById(item.storageLocationId)?.name?.toLowerCase() ?? '';
-
-        final matches = _searchField == _SearchField.name
-            ? nameMatch
-            : _searchField == _SearchField.category
-                ? categoryName.contains(query)
-                : locationName.contains(query);
-
-        if (!matches) return false;
+        if (!matchesAllClauses) return false;
       }
 
       // Filter
@@ -236,8 +232,20 @@ class _InventoryScreenState extends State<InventoryScreen> {
                         height: 48,
                         child: TextFormField(
                           decoration: InputDecoration(
-                            hintText: 'Search inventory',
+                            hintText: 'Search by name, category, or location',
                             prefixIcon: const Icon(Icons.search),
+                            suffixIcon: Tooltip(
+                              message: 'Use commas or quotes to combine search terms',
+                              preferBelow: false,
+                              child: Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: Icon(
+                                  Icons.info_outline_rounded,
+                                  size: 18,
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ),
                             isDense: true,
                             filled: true,
                             fillColor: Theme.of(context).colorScheme.surfaceVariant,
@@ -488,6 +496,53 @@ class _InventoryScreenState extends State<InventoryScreen> {
       case _FilterOption.discarded:
         return 'Discarded';
     }
+  }
+
+  List<String> _parseSearchClauses(String input) {
+    final trimmed = input.trim();
+    if (trimmed.isEmpty) {
+      return const [];
+    }
+
+    final clauses = <String>[];
+    final buffer = StringBuffer();
+    bool inSingleQuotes = false;
+    bool inDoubleQuotes = false;
+
+    for (var i = 0; i < trimmed.length; i++) {
+      final char = trimmed[i];
+
+      if (char == "'" && !inDoubleQuotes) {
+        inSingleQuotes = !inSingleQuotes;
+        continue;
+      }
+
+      if (char == '"' && !inSingleQuotes) {
+        inDoubleQuotes = !inDoubleQuotes;
+        continue;
+      }
+
+      if (char == ',' && !inSingleQuotes && !inDoubleQuotes) {
+        final clause = buffer.toString().trim();
+        if (clause.isNotEmpty) {
+          clauses.add(clause);
+        }
+        buffer.clear();
+        continue;
+      }
+
+      buffer.write(char);
+    }
+
+    final lastClause = buffer.toString().trim();
+    if (lastClause.isNotEmpty) {
+      clauses.add(lastClause);
+    }
+
+    return clauses
+        .map((clause) => clause.replaceAll("'", '').replaceAll('"', '').trim())
+        .where((clause) => clause.isNotEmpty)
+        .toList();
   }
 
   String _sortLabel(_SortField s) {
@@ -790,6 +845,13 @@ class _FoodItemCard extends StatelessWidget {
                     ],
 
                     const SizedBox(height: 8),
+                    if (hasConsumed || hasDonated || hasDiscarded) ...[
+                      _InformationLine(
+                        icon: Icons.access_time_outlined,
+                        text: _statusTimestampLabel(item),
+                      ),
+                      const SizedBox(height: 4),
+                    ],
                     _InformationLine(
                       icon: Icons.category_outlined,
                       text: categoryName,
@@ -894,6 +956,19 @@ class _FoodItemCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  static String _statusTimestampLabel(FoodItem item) {
+    final timestamp = item.statusTimestamp;
+
+    if (timestamp == null) {
+      return 'Status updated recently';
+    }
+
+    final formattedDate = DateFormat('dd MMM yyyy').format(timestamp);
+    final statusLabel = item.statusEnum.label;
+
+    return '$statusLabel at $formattedDate';
   }
 
   static String _formatQuantity(double quantity) {

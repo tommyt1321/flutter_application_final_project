@@ -44,7 +44,8 @@ class DashboardScreen extends StatelessWidget {
     final totalItems = items.length;
 
     final lowStockCount = items.where((item) {
-      return item.quantity <= _lowStockThreshold;
+      return item.statusEnum == FoodItemStatus.available &&
+          item.quantity <= _lowStockThreshold;
     }).length;
 
     final useFirstItems = items
@@ -259,6 +260,10 @@ class DashboardScreen extends StatelessWidget {
   }
 
   static bool _needsAttention(FoodItem item) {
+    if (item.statusEnum != FoodItemStatus.available) {
+      return false;
+    }
+
     final expiryDate = item.expiryDate;
 
     if (expiryDate == null) {

@@ -47,6 +47,9 @@ class FoodItem {
     this.expiryDate,
     this.notes,
     this.status,
+    this.consumedAt,
+    this.donatedAt,
+    this.discardedAt,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -82,9 +85,18 @@ class FoodItem {
   final String? status;
 
   @HiveField(10)
-  final DateTime createdAt;
+  final DateTime? consumedAt;
 
   @HiveField(11)
+  final DateTime? donatedAt;
+
+  @HiveField(12)
+  final DateTime? discardedAt;
+
+  @HiveField(13)
+  final DateTime createdAt;
+
+  @HiveField(14)
   final DateTime updatedAt;
 
   FoodItem copyWith({
@@ -101,6 +113,12 @@ class FoodItem {
     bool clearNotes = false,
     String? status,
     bool clearStatus = false,
+    bool clearConsumedAt = false,
+    bool clearDonatedAt = false,
+    bool clearDiscardedAt = false,
+    DateTime? consumedAt,
+    DateTime? donatedAt,
+    DateTime? discardedAt,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -115,10 +133,31 @@ class FoodItem {
       expiryDate: clearExpiryDate ? null : expiryDate ?? this.expiryDate,
       notes: clearNotes ? null : notes ?? this.notes,
       status: clearStatus ? null : status ?? this.status,
+      consumedAt: clearConsumedAt ? null : consumedAt ?? this.consumedAt,
+      donatedAt: clearDonatedAt ? null : donatedAt ?? this.donatedAt,
+      discardedAt: clearDiscardedAt ? null : discardedAt ?? this.discardedAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 
   FoodItemStatus get statusEnum => parseFoodItemStatus(status);
+
+  DateTime? get statusTimestamp {
+    final status = statusEnum;
+
+    if (status == FoodItemStatus.consumed) {
+      return consumedAt;
+    }
+
+    if (status == FoodItemStatus.donated) {
+      return donatedAt;
+    }
+
+    if (status == FoodItemStatus.discarded) {
+      return discardedAt;
+    }
+
+    return null;
+  }
 }

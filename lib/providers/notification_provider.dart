@@ -55,6 +55,10 @@ class NotificationProvider extends ChangeNotifier {
   }
 
   bool _isExpired(FoodItem item) {
+    if (item.statusEnum != FoodItemStatus.available) {
+      return false;
+    }
+
     final expiryDate = item.expiryDate;
 
     if (expiryDate == null) {
@@ -67,6 +71,10 @@ class NotificationProvider extends ChangeNotifier {
   }
 
   bool _isExpiringSoon(FoodItem item) {
+    if (item.statusEnum != FoodItemStatus.available) {
+      return false;
+    }
+
     final expiryDate = item.expiryDate;
 
     if (expiryDate == null) {
@@ -86,7 +94,8 @@ class NotificationProvider extends ChangeNotifier {
   }
 
   bool _isLowStock(FoodItem item) {
-    return item.quantity <= lowStockThreshold;
+    return item.statusEnum == FoodItemStatus.available &&
+        item.quantity <= lowStockThreshold;
   }
 
   DateTime _dateOnly(DateTime date) {
