@@ -9,9 +9,44 @@ import '../../providers/shopping_item_provider.dart';
 import '../../providers/storage_location_provider.dart';
 import 'food_item_form_screen.dart';
 
-enum _FilterOption { all, available, expiring, expired, lowStock, consumed, donated, discarded }
+enum FilterOption { all, available, expiring, expired, lowStock, consumed, donated, discarded }
 
 enum _SortField { expiryDate, name, dateAdded, quantity, category }
+
+bool shouldIncludeItemForFilter({
+  required FoodItem item,
+  required FilterOption filter,
+  required bool isExpired,
+  required bool hasConsumed,
+  required bool hasDonated,
+  required bool hasDiscarded,
+}) {
+  switch (filter) {
+    case FilterOption.all:
+      return true;
+
+    case FilterOption.available:
+      return item.quantity > 0 && !isExpired && !hasConsumed && !hasDonated && !hasDiscarded;
+
+    case FilterOption.expiring:
+      return false;
+
+    case FilterOption.expired:
+      return false;
+
+    case FilterOption.lowStock:
+      return false;
+
+    case FilterOption.consumed:
+      return false;
+
+    case FilterOption.donated:
+      return false;
+
+    case FilterOption.discarded:
+      return false;
+  }
+}
 
 class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key});
@@ -23,7 +58,7 @@ class InventoryScreen extends StatefulWidget {
 
 class _InventoryScreenState extends State<InventoryScreen> {
   String _searchQuery = '';
-  _FilterOption _filter = _FilterOption.all;
+  FilterOption _filter = FilterOption.all;
   _SortField _sortField = _SortField.expiryDate;
   bool _ascending = true;
 
@@ -128,35 +163,47 @@ class _InventoryScreenState extends State<InventoryScreen> {
       final hasDonated = status == FoodItemStatus.donated;
       final hasDiscarded = status == FoodItemStatus.discarded;
 
+      final isExpired = foodItemProvider.expiredItems.any((i) => i.id == item.id);
+
+      if (!shouldIncludeItemForFilter(
+        item: item,
+        filter: _filter,
+        isExpired: isExpired,
+        hasConsumed: hasConsumed,
+        hasDonated: hasDonated,
+        hasDiscarded: hasDiscarded,
+      )) {
+        return false;
+      }
+
       switch (_filter) {
-        case _FilterOption.all:
+        case FilterOption.all:
           break;
 
-        case _FilterOption.available:
-          if (isLowStock || hasConsumed || hasDonated || hasDiscarded) return false;
+        case FilterOption.available:
           break;
 
-        case _FilterOption.expiring:
+        case FilterOption.expiring:
           if (!foodItemProvider.expiringSoonItems.any((i) => i.id == item.id)) return false;
           break;
 
-        case _FilterOption.expired:
-          if (!foodItemProvider.expiredItems.any((i) => i.id == item.id)) return false;
+        case FilterOption.expired:
+          if (!isExpired) return false;
           break;
 
-        case _FilterOption.lowStock:
+        case FilterOption.lowStock:
           if (!isLowStock) return false;
           break;
 
-        case _FilterOption.consumed:
+        case FilterOption.consumed:
           if (!hasConsumed) return false;
           break;
 
-        case _FilterOption.donated:
+        case FilterOption.donated:
           if (!hasDonated) return false;
           break;
 
-        case _FilterOption.discarded:
+        case FilterOption.discarded:
           if (!hasDiscarded) return false;
           break;
       }
@@ -214,101 +261,213 @@ class _InventoryScreenState extends State<InventoryScreen> {
         const SizedBox(height: 20),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Your Items',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: SizedBox(
-                        height: 48,
-                        child: TextFormField(
-                          decoration: InputDecoration(
-                            hintText: 'Search by name, category, or location',
-                            prefixIcon: const Icon(Icons.search),
-                            suffixIcon: Tooltip(
-                              message: 'Use commas or quotes to combine search terms',
-                              preferBelow: false,
-                              child: Padding(
-                                padding: const EdgeInsets.only(right: 8),
-                                child: Icon(
-                                  Icons.info_outline_rounded,
-                                  size: 18,
-                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final maxWidth = constraints.maxWidth;
+                  final shouldUseSingleRow = maxWidth >= 900;
+
+                  if (shouldUseSingleRow) {
+                    return Row(
+                      children: [
+                        Text(
+                          'Your Items',
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: SizedBox(
+                            height: 48,
+                            child: TextFormField(
+                              decoration: InputDecoration(
+                                hintText: 'Search by name, category, or location',
+                                prefixIcon: const Icon(Icons.search),
+                                suffixIcon: Tooltip(
+                                  message: 'Use commas or quotes to combine search terms',
+                                  preferBelow: false,
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(right: 8),
+                                    child: Icon(
+                                      Icons.info_outline_rounded,
+                                      size: 18,
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ),
+                                isDense: true,
+                                filled: true,
+                                fillColor: Theme.of(context).colorScheme.surfaceVariant,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(24),
+                                  borderSide: BorderSide.none,
+                                ),
+                              ),
+                              onChanged: (v) => setState(() => _searchQuery = v),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: DropdownButtonFormField<FilterOption>(
+                            value: _filter,
+                            isExpanded: true,
+                            decoration: const InputDecoration(
+                              contentPadding: EdgeInsets.symmetric(horizontal: 12),
+                              border: OutlineInputBorder(),
+                            ),
+                            items: FilterOption.values
+                                .map((f) => DropdownMenuItem(value: f, child: Text(_filterLabel(f))))
+                                .toList(),
+                            onChanged: (v) {
+                              if (v == null) return;
+                              setState(() => _filter = v);
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: DropdownButtonFormField<_SortField>(
+                            value: _sortField,
+                            isExpanded: true,
+                            decoration: const InputDecoration(
+                              contentPadding: EdgeInsets.symmetric(horizontal: 12),
+                              border: OutlineInputBorder(),
+                            ),
+                            items: _SortField.values
+                                .map((s) => DropdownMenuItem(value: s, child: Text(_sortLabel(s))))
+                                .toList(),
+                            onChanged: (v) {
+                              if (v == null) return;
+                              setState(() => _sortField = v);
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Material(
+                          type: MaterialType.button,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                          color: Theme.of(context).colorScheme.primaryContainer,
+                          child: InkWell(
+                            onTap: () => setState(() => _ascending = !_ascending),
+                            child: const SizedBox(
+                              width: 56,
+                              height: 56,
+                              child: Center(
+                                child: Icon(Icons.swap_vert_rounded, size: 18),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            'Your Items',
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: SizedBox(
+                              height: 48,
+                              child: TextFormField(
+                                decoration: InputDecoration(
+                                  hintText: 'Search by name, category, or location',
+                                  prefixIcon: const Icon(Icons.search),
+                                  suffixIcon: Tooltip(
+                                    message: 'Use commas or quotes to combine search terms',
+                                    preferBelow: false,
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(right: 8),
+                                      child: Icon(
+                                        Icons.info_outline_rounded,
+                                        size: 18,
+                                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ),
+                                  isDense: true,
+                                  filled: true,
+                                  fillColor: Theme.of(context).colorScheme.surfaceVariant,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(24),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                ),
+                                onChanged: (v) => setState(() => _searchQuery = v),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: DropdownButtonFormField<FilterOption>(
+                              value: _filter,
+                              isExpanded: true,
+                              decoration: const InputDecoration(
+                                contentPadding: EdgeInsets.symmetric(horizontal: 12),
+                                border: OutlineInputBorder(),
+                              ),
+                              items: FilterOption.values
+                                  .map((f) => DropdownMenuItem(value: f, child: Text(_filterLabel(f))))
+                                  .toList(),
+                              onChanged: (v) {
+                                if (v == null) return;
+                                setState(() => _filter = v);
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: DropdownButtonFormField<_SortField>(
+                              value: _sortField,
+                              isExpanded: true,
+                              decoration: const InputDecoration(
+                                contentPadding: EdgeInsets.symmetric(horizontal: 12),
+                                border: OutlineInputBorder(),
+                              ),
+                              items: _SortField.values
+                                  .map((s) => DropdownMenuItem(value: s, child: Text(_sortLabel(s))))
+                                  .toList(),
+                              onChanged: (v) {
+                                if (v == null) return;
+                                setState(() => _sortField = v);
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Material(
+                            type: MaterialType.button,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                            color: Theme.of(context).colorScheme.primaryContainer,
+                            child: InkWell(
+                              onTap: () => setState(() => _ascending = !_ascending),
+                              child: const SizedBox(
+                                width: 56,
+                                height: 56,
+                                child: Center(
+                                  child: Icon(Icons.swap_vert_rounded, size: 18),
                                 ),
                               ),
                             ),
-                            isDense: true,
-                            filled: true,
-                            fillColor: Theme.of(context).colorScheme.surfaceVariant,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(24),
-                              borderSide: BorderSide.none,
-                            ),
                           ),
-                          onChanged: (v) => setState(() => _searchQuery = v),
-                        ),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  );
+                },
               ),
-              const SizedBox(width: 12),
-              // Filter Dropdown
-              SizedBox(
-                width: 160,
-                child: DropdownButtonFormField<_FilterOption>(
-                  value: _filter,
-                  decoration: const InputDecoration(contentPadding: EdgeInsets.symmetric(horizontal: 12), border: OutlineInputBorder()),
-                  items: _FilterOption.values
-                      .map((f) => DropdownMenuItem(value: f, child: Text(_filterLabel(f))))
-                      .toList(),
-                  onChanged: (v) {
-                    if (v == null) return;
-                    setState(() => _filter = v);
-                  },
-                ),
-              ),
-              const SizedBox(width: 8),
-              // Sort Dropdown + Asc/Desc button
-              SizedBox(
-                width: 220,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: DropdownButtonFormField<_SortField>(
-                        value: _sortField,
-                        decoration: const InputDecoration(contentPadding: EdgeInsets.symmetric(horizontal: 12), border: OutlineInputBorder()),
-                        items: _SortField.values
-                            .map((s) => DropdownMenuItem(value: s, child: Text(_sortLabel(s))))
-                            .toList(),
-                        onChanged: (v) {
-                          if (v == null) return;
-                          setState(() => _sortField = v);
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Material(
-                      type: MaterialType.button,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                      color: Theme.of(context).colorScheme.primaryContainer,
-                      child: IconButton(
-                        icon: Icon(_ascending ? Icons.arrow_upward : Icons.arrow_downward, size: 18, color: Theme.of(context).colorScheme.onPrimaryContainer),
-                        onPressed: () => setState(() => _ascending = !_ascending),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              const SizedBox(height: 12),
             ],
           ),
         ),
@@ -477,23 +636,23 @@ class _InventoryScreenState extends State<InventoryScreen> {
     }
   }
 
-  String _filterLabel(_FilterOption f) {
+  String _filterLabel(FilterOption f) {
     switch (f) {
-      case _FilterOption.all:
+      case FilterOption.all:
         return 'All';
-      case _FilterOption.available:
+      case FilterOption.available:
         return 'Available';
-      case _FilterOption.expiring:
+      case FilterOption.expiring:
         return 'Expiring';
-      case _FilterOption.expired:
+      case FilterOption.expired:
         return 'Expired';
-      case _FilterOption.lowStock:
+      case FilterOption.lowStock:
         return 'Low stock';
-      case _FilterOption.consumed:
+      case FilterOption.consumed:
         return 'Consumed';
-      case _FilterOption.donated:
+      case FilterOption.donated:
         return 'Donated';
-      case _FilterOption.discarded:
+      case FilterOption.discarded:
         return 'Discarded';
     }
   }
