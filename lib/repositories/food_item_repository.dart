@@ -27,6 +27,16 @@ class FoodItemRepository {
     return item;
   }
 
+  Future<void> migrateLegacyItems(String userId) async {
+    final items = _box.values.toList(growable: false);
+
+    for (final item in items) {
+      if (item.ownerUserId.isEmpty) {
+        await _box.put(item.id, item.copyWith(ownerUserId: userId));
+      }
+    }
+  }
+
   Future<void> addItem(FoodItem item, {required String userId}) async {
     _validateItem(item);
 
