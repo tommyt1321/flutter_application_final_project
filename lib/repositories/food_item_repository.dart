@@ -31,8 +31,22 @@ class FoodItemRepository {
     final items = _box.values.toList(growable: false);
 
     for (final item in items) {
-      if (item.ownerUserId.isEmpty) {
-        await _box.put(item.id, item.copyWith(ownerUserId: userId));
+      var updatedItem = item;
+
+      if (updatedItem.ownerUserId.isEmpty) {
+        updatedItem = updatedItem.copyWith(ownerUserId: userId);
+      }
+
+      final legacyStatus = _extractStatusFromNotes(updatedItem.notes);
+      if (updatedItem.status == null && legacyStatus != null) {
+        updatedItem = updatedItem.copyWith(
+          status: legacyStatus,
+          notes: _stripStatusMarkers(updatedItem.notes),
+        );
+      }
+
+      if (updatedItem != item) {
+        await _box.put(updatedItem.id, updatedItem);
       }
     }
   }
@@ -45,13 +59,17 @@ class FoodItemRepository {
     }
 
     final now = DateTime.now();
+    final status = _normalizeStatus(item.status) ?? 'available';
+    final normalizedNotes = _normalizeNotes(item.notes);
 
     final savedItem = item.copyWith(
       ownerUserId: userId,
       name: item.name.trim(),
       unit: item.unit.trim(),
-      notes: _normalizeNotes(item.notes),
-      clearNotes: _normalizeNotes(item.notes) == null,
+      notes: normalizedNotes,
+      clearNotes: normalizedNotes == null,
+      status: status,
+      clearStatus: false,
       createdAt: now,
       updatedAt: now,
     );
@@ -73,6 +91,7 @@ class FoodItemRepository {
     _validateItem(item);
 
     final normalizedNotes = _normalizeNotes(item.notes);
+    final normalizedStatus = _normalizeStatus(item.status) ?? item.status ?? 'available';
 
     final updatedItem = item.copyWith(
       ownerUserId: userId,
@@ -80,6 +99,8 @@ class FoodItemRepository {
       unit: item.unit.trim(),
       notes: normalizedNotes,
       clearNotes: normalizedNotes == null,
+      status: normalizedStatus,
+      clearStatus: false,
       createdAt: existingItem.createdAt,
       updatedAt: DateTime.now(),
     );
@@ -113,8 +134,11 @@ class FoodItemRepository {
       throw ArgumentError('Food name cannot exceed 50 characters.');
     }
 
+    final status = item.statusEnum;
     if (item.quantity <= 0) {
-      throw ArgumentError('Quantity must be greater than zero.');
+      if (status == FoodItemStatus.available) {
+        throw ArgumentError('Quantity must be greater than zero.');
+      }
     }
 
     if (trimmedUnit.isEmpty) {
@@ -144,6 +168,45 @@ class FoodItemRepository {
     }
 
     return trimmedNotes;
+  }
+
+  String? _normalizeStatus(String? status) {
+    final normalized = status?.trim().toLowerCase();
+
+    switch (normalized) {
+      case 'available':
+      case 'consumed':
+      case 'donated':
+      case 'discarded':
+        return normalized;
+      default:
+        return null;
+    }
+  }
+
+  String? _extractStatusFromNotes(String? notes) {
+    if (notes == null) {
+      return null;
+    }
+
+    final regex = RegExp(r'\[STATUS:(consumed|donated|discarded)\]', caseSensitive: false);
+    final match = regex.firstMatch(notes);
+
+    if (match == null) {
+      return null;
+    }
+
+    return match.group(1)?.toLowerCase();
+  }
+
+  String? _stripStatusMarkers(String? notes) {
+    if (notes == null) {
+      return null;
+    }
+
+    final stripped = notes.replaceAll(RegExp(r'\[STATUS:(consumed|donated|discarded)\]', caseSensitive: false), '').trim();
+
+    return stripped.isEmpty ? null : stripped;
   }
 
   int _compareItems(FoodItem first, FoodItem second) {

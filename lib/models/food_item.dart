@@ -2,6 +2,38 @@ import 'package:hive_ce_flutter/hive_flutter.dart';
 
 part 'food_item.g.dart';
 
+enum FoodItemStatus { available, consumed, donated, discarded }
+
+extension FoodItemStatusX on FoodItemStatus {
+  String get label {
+    switch (this) {
+      case FoodItemStatus.available:
+        return 'Available';
+      case FoodItemStatus.consumed:
+        return 'Consumed';
+      case FoodItemStatus.donated:
+        return 'Donated';
+      case FoodItemStatus.discarded:
+        return 'Discarded';
+    }
+  }
+}
+
+FoodItemStatus parseFoodItemStatus(String? raw) {
+  final normalized = raw?.trim().toLowerCase();
+
+  switch (normalized) {
+    case 'consumed':
+      return FoodItemStatus.consumed;
+    case 'donated':
+      return FoodItemStatus.donated;
+    case 'discarded':
+      return FoodItemStatus.discarded;
+    default:
+      return FoodItemStatus.available;
+  }
+}
+
 @HiveType(typeId: 3)
 class FoodItem {
   const FoodItem({
@@ -12,10 +44,14 @@ class FoodItem {
     required this.unit,
     required this.categoryId,
     required this.storageLocationId,
-    required this.createdAt,
-    required this.updatedAt,
     this.expiryDate,
     this.notes,
+    this.status,
+    this.consumedAt,
+    this.donatedAt,
+    this.discardedAt,
+    required this.createdAt,
+    required this.updatedAt,
   });
 
   @HiveField(0)
@@ -46,9 +82,21 @@ class FoodItem {
   final String? notes;
 
   @HiveField(9)
-  final DateTime createdAt;
+  final String? status;
 
   @HiveField(10)
+  final DateTime? consumedAt;
+
+  @HiveField(11)
+  final DateTime? donatedAt;
+
+  @HiveField(12)
+  final DateTime? discardedAt;
+
+  @HiveField(13)
+  final DateTime createdAt;
+
+  @HiveField(14)
   final DateTime updatedAt;
 
   FoodItem copyWith({
@@ -63,6 +111,14 @@ class FoodItem {
     bool clearExpiryDate = false,
     String? notes,
     bool clearNotes = false,
+    String? status,
+    bool clearStatus = false,
+    bool clearConsumedAt = false,
+    bool clearDonatedAt = false,
+    bool clearDiscardedAt = false,
+    DateTime? consumedAt,
+    DateTime? donatedAt,
+    DateTime? discardedAt,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -76,8 +132,32 @@ class FoodItem {
       storageLocationId: storageLocationId ?? this.storageLocationId,
       expiryDate: clearExpiryDate ? null : expiryDate ?? this.expiryDate,
       notes: clearNotes ? null : notes ?? this.notes,
+      status: clearStatus ? null : status ?? this.status,
+      consumedAt: clearConsumedAt ? null : consumedAt ?? this.consumedAt,
+      donatedAt: clearDonatedAt ? null : donatedAt ?? this.donatedAt,
+      discardedAt: clearDiscardedAt ? null : discardedAt ?? this.discardedAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
+  }
+
+  FoodItemStatus get statusEnum => parseFoodItemStatus(status);
+
+  DateTime? get statusTimestamp {
+    final status = statusEnum;
+
+    if (status == FoodItemStatus.consumed) {
+      return consumedAt;
+    }
+
+    if (status == FoodItemStatus.donated) {
+      return donatedAt;
+    }
+
+    if (status == FoodItemStatus.discarded) {
+      return discardedAt;
+    }
+
+    return null;
   }
 }
