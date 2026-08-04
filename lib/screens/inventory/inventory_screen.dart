@@ -1,9 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import '../../models/food_activity.dart';
 import '../../models/food_item.dart';
+import '../../providers/analytics_provider.dart';
 import '../../providers/category_provider.dart';
+import '../../providers/food_activity_provider.dart';
 import '../../providers/food_item_provider.dart';
 import '../../providers/shopping_item_provider.dart';
 import '../../providers/storage_location_provider.dart';
@@ -558,6 +563,20 @@ class _InventoryScreenState extends State<InventoryScreen> {
     if (!context.mounted) return;
 
     if (success) {
+      final foodActivityProvider = context.read<FoodActivityProvider?>();
+
+      await foodActivityProvider?.logActivity(
+        foodItemId: item.id,
+        foodItemName: item.name,
+        activityType: ActivityType.consumed,
+        quantity: entered,
+        unit: item.unit,
+      );
+
+      if (!context.mounted) return;
+
+      unawaited(context.read<AnalyticsProvider?>()?.refresh());
+
       _showMessage(context, 'Consumed ${entered.toString()} ${item.unit} of ${item.name}.');
     } else {
       _showMessage(context, provider.errorMessage ?? 'Unable to update item.');
@@ -598,6 +617,36 @@ class _InventoryScreenState extends State<InventoryScreen> {
     if (!context.mounted) return;
 
     if (success) {
+      final foodActivityProvider = context.read<FoodActivityProvider?>();
+
+      // 'discarded' maps to ActivityType.wasted — there's no separate
+      // "discarded" activity type, and semantically discarding food is
+      // waste. 'donated' has its own ActivityType so it doesn't get
+      // folded into the waste percentage.
+      final activityType = tag.toLowerCase() == 'donated'
+          ? ActivityType.donated
+          : ActivityType.wasted;
+
+      // Guard against logging a zero-quantity activity (the repository
+      // rejects quantity <= 0) if this was somehow called on an item
+      // that was already empty.
+      if (item.quantity > 0) {
+        await foodActivityProvider?.logActivity(
+          foodItemId: item.id,
+          foodItemName: item.name,
+          activityType: activityType,
+          // Log the quantity that existed before this action zeroed it
+          // out, not the resulting 0 — otherwise Analytics would show 0
+          // donated/wasted for every one of these actions.
+          quantity: item.quantity,
+          unit: item.unit,
+        );
+      }
+
+      if (!context.mounted) return;
+
+      unawaited(context.read<AnalyticsProvider?>()?.refresh());
+
       _showMessage(context, '${item.name} marked as $tag.');
     } else {
       _showMessage(context, provider.errorMessage ?? 'Unable to update item.');

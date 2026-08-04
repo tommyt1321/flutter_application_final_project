@@ -28,13 +28,14 @@ class AnalyticsSummaryAdapter extends TypeAdapter<AnalyticsSummary> {
       wastePercentage: (fields[8] as num).toDouble(),
       generatedAt: fields[9] as DateTime,
       mostWastedItemName: fields[10] as String?,
+      totalDonated: fields[11] == null ? 0 : (fields[11] as num).toDouble(),
     );
   }
 
   @override
   void write(BinaryWriter writer, AnalyticsSummary obj) {
     writer
-      ..writeByte(11)
+      ..writeByte(12)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -56,7 +57,9 @@ class AnalyticsSummaryAdapter extends TypeAdapter<AnalyticsSummary> {
       ..writeByte(9)
       ..write(obj.generatedAt)
       ..writeByte(10)
-      ..write(obj.mostWastedItemName);
+      ..write(obj.mostWastedItemName)
+      ..writeByte(11)
+      ..write(obj.totalDonated);
   }
 
   @override
