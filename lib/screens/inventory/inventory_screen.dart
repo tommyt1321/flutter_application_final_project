@@ -1190,7 +1190,7 @@ class _FoodItemCard extends StatelessWidget {
     if (days == 0) {
       return _ExpiryPresentation(
         text: 'Expires today',
-        color: Colors.yellow,
+        color: Colors.red,
       );
     }
 
