@@ -32,6 +32,9 @@ import 'repositories/food_item_repository.dart';
 import 'repositories/settings_repository.dart';
 import 'repositories/shopping_item_repository.dart';
 import 'repositories/storage_location_repository.dart';
+import 'package:device_preview/device_preview.dart';
+import 'package:flutter/foundation.dart'
+    show kIsWeb, kReleaseMode;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -95,7 +98,9 @@ Future<void> main() async {
   await settingsProvider.initialize();
 
   runApp(
-    MultiProvider(
+  DevicePreview(
+    enabled: !kReleaseMode,
+    builder: (context) => MultiProvider(
       providers: [
         ChangeNotifierProvider(
           create: (_) => NotificationProvider()..loadClearedNotifications(),
@@ -196,6 +201,7 @@ Future<void> main() async {
         ChangeNotifierProvider<SettingsProvider>.value(value: settingsProvider),
       ],
       child: const PantryPalApp(),
+    ),
     ),
   );
 }
