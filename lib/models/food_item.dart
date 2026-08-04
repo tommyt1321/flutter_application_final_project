@@ -52,6 +52,7 @@ class FoodItem {
     this.discardedAt,
     required this.createdAt,
     required this.updatedAt,
+    this.useFirst = false,
   });
 
   @HiveField(0)
@@ -99,6 +100,9 @@ class FoodItem {
   @HiveField(14)
   final DateTime updatedAt;
 
+  @HiveField(15)
+  final bool useFirst;
+
   FoodItem copyWith({
     String? id,
     String? ownerUserId,
@@ -121,6 +125,7 @@ class FoodItem {
     DateTime? discardedAt,
     DateTime? createdAt,
     DateTime? updatedAt,
+    bool? useFirst,
   }) {
     return FoodItem(
       id: id ?? this.id,
@@ -138,6 +143,7 @@ class FoodItem {
       discardedAt: clearDiscardedAt ? null : discardedAt ?? this.discardedAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      useFirst: useFirst ?? this.useFirst,
     );
   }
 

@@ -36,6 +36,8 @@ class _FoodItemFormScreenState extends State<FoodItemFormScreen> {
 
   late final TextEditingController _nameController;
 
+  bool _useFirst = false;
+
   late final TextEditingController _quantityController;
 
   late final TextEditingController _notesController;
@@ -59,6 +61,8 @@ class _FoodItemFormScreenState extends State<FoodItemFormScreen> {
     );
 
     _notesController = TextEditingController(text: item?.notes ?? '');
+
+    _useFirst = widget.item?.useFirst ?? false;
 
     _selectedUnit = item?.unit ?? _defaultUnits.first;
 
@@ -337,6 +341,39 @@ class _FoodItemFormScreenState extends State<FoodItemFormScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
+
+                Card(
+                  margin: EdgeInsets.zero,
+                  child: ListTile(
+                    leading: const Icon(Icons.push_pin_outlined),
+                    title: const Text('Use First reminder'),
+                    subtitle: Text(
+                      _useFirst
+                          ? 'This item will appear in your Use First list.'
+                          : 'Show this item in Use First before expiry.',
+                    ),
+                    trailing: Switch(
+                      value: _useFirst,
+                      onChanged: isSubmitting
+                          ? null
+                          : (value) {
+                              setState(() {
+                                _useFirst = value;
+                              });
+                            },
+                    ),
+                    onTap: isSubmitting
+                        ? null
+                        : () {
+                            setState(() {
+                              _useFirst = !_useFirst;
+                            });
+                          },
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
                 TextFormField(
                   controller: _notesController,
                   enabled: !isSubmitting,
@@ -474,6 +511,7 @@ class _FoodItemFormScreenState extends State<FoodItemFormScreen> {
             storageLocationId: storageLocationId,
             expiryDate: _expiryDate,
             notes: _notesController.text,
+            useFirst: _useFirst,
           )
         : await provider.updateItem(
             item: existingItem,
@@ -485,6 +523,7 @@ class _FoodItemFormScreenState extends State<FoodItemFormScreen> {
             expiryDate: _expiryDate,
             removeExpiryDate: _expiryDate == null,
             notes: _notesController.text,
+            useFirst: _useFirst,
           );
 
     if (!mounted) {

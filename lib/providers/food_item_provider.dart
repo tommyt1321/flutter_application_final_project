@@ -164,6 +164,7 @@ class FoodItemProvider extends ChangeNotifier {
     required String storageLocationId,
     DateTime? expiryDate,
     String? notes,
+    bool useFirst = false,
   }) async {
     final userId = _userId;
 
@@ -191,6 +192,7 @@ class FoodItemProvider extends ChangeNotifier {
         storageLocationId: storageLocationId,
         expiryDate: expiryDate,
         notes: notes,
+        useFirst: useFirst,
         status: FoodItemStatus.available.name,
         createdAt: now,
         updatedAt: now,
@@ -225,6 +227,7 @@ class FoodItemProvider extends ChangeNotifier {
     DateTime? expiryDate,
     required bool removeExpiryDate,
     String? notes,
+    bool useFirst = false,
   }) async {
     final userId = _userId;
 
@@ -247,6 +250,7 @@ class FoodItemProvider extends ChangeNotifier {
         categoryId: categoryId,
         storageLocationId: storageLocationId,
         expiryDate: expiryDate,
+        useFirst: useFirst,
         clearExpiryDate: removeExpiryDate,
         notes: notes,
         clearNotes: notes == null || notes.trim().isEmpty,
@@ -362,4 +366,12 @@ class FoodItemProvider extends ChangeNotifier {
     return 'Unable to save the food item. '
         'Check the terminal for the exact error.';
   }
+
+  List<FoodItem> get manuallySelectedItems {
+  return _items.where(
+    (item) => item.useFirst,
+  ).toList();
 }
+
+}
+

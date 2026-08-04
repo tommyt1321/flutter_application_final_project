@@ -27,13 +27,27 @@ class UseFirstScreen extends StatelessWidget {
       );
     }
 
-    final attentionItems =
-        <FoodItem>[
-          ...foodItemProvider.expiredItems,
-          ...foodItemProvider.expiringSoonItems,
-        ]..sort((first, second) {
-          return first.expiryDate!.compareTo(second.expiryDate!);
-        });
+    final Map<String, FoodItem> itemMap = {};
+
+    for (final item in foodItemProvider.expiredItems) {
+      itemMap[item.id] = item;
+    }
+
+    for (final item in foodItemProvider.expiringSoonItems) {
+      itemMap[item.id] = item;
+    }
+
+    for (final item in foodItemProvider.manuallySelectedItems) {
+      itemMap[item.id] = item;
+    }
+
+    final attentionItems = itemMap.values.toList()
+      ..sort((a, b) {
+        final aDate = a.expiryDate ?? DateTime(9999);
+        final bDate = b.expiryDate ?? DateTime(9999);
+
+        return aDate.compareTo(bDate);
+      });
 
     return Scaffold(
       appBar: AppBar(
