@@ -40,7 +40,7 @@ Future<void> main() async {
 
   if (kIsWeb) {
     await firebase_auth.FirebaseAuth.instance.setPersistence(
-      firebase_auth.Persistence.NONE,
+      firebase_auth.Persistence.LOCAL,
     );
   }
 
