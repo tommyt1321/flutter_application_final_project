@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
+import 'package:device_preview/device_preview.dart';
 import 'core/constants/app_strings.dart';
 import 'core/routes/app_routes.dart';
 import 'core/routes/route_generator.dart';
@@ -14,6 +14,9 @@ class PantryPalApp extends StatelessWidget {
     final settingsProvider = context.watch<SettingsProvider?>();
 
     return MaterialApp(
+      useInheritedMediaQuery: true,
+      locale: DevicePreview.locale(context),
+      builder: DevicePreview.appBuilder,
       title: AppStrings.appName,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,

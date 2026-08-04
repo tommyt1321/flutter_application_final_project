@@ -71,7 +71,7 @@ class NotificationsScreen extends StatelessWidget {
                 ),
                 icon: const Icon(Icons.clear_all_rounded, size: 20),
                 label: const Text(
-                  'Clear Notifications',
+                  'Clear All',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 onPressed: () async {
