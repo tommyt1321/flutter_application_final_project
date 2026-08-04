@@ -344,7 +344,7 @@ class _UseFirstItemCard extends StatelessWidget {
       return _ExpiryInformation(
         text: 'Expires today',
         icon: Icons.warning_amber_rounded,
-        color: colorScheme.error,
+        color: Colors.red,
       );
     }
 
@@ -352,7 +352,7 @@ class _UseFirstItemCard extends StatelessWidget {
       return _ExpiryInformation(
         text: 'Expires tomorrow',
         icon: Icons.schedule_rounded,
-        color: colorScheme.tertiary,
+        color: Colors.red,
       );
     }
 
