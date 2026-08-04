@@ -1141,14 +1141,14 @@ class _FoodItemCard extends StatelessWidget {
     if (days == 0) {
       return _ExpiryPresentation(
         text: 'Expires today',
-        color: Colors.red,
+        color: colorScheme.error,
       );
     }
 
     if (days == 1) {
       return _ExpiryPresentation(
         text: 'Expires tomorrow',
-        color: Colors.red,
+        color: colorScheme.tertiary,
       );
     }
 
