@@ -135,6 +135,21 @@ class AnalyticsScreen extends StatelessWidget {
               ),
             ],
           ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _StatCard(
+                  icon: Icons.volunteer_activism_outlined,
+                  label: 'Donated',
+                  value: summary.totalDonated,
+                  color: Theme.of(context).colorScheme.secondary,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(child: SizedBox.shrink()),
+            ],
+          ),
           const SizedBox(height: 24),
           Card(
             child: Padding(
